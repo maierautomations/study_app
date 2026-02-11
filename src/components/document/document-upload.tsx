@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Upload, FileText, X, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { trackActivity } from "@/lib/gamification-client";
 
 const ACCEPTED_TYPES: Record<string, string> = {
   "application/pdf": "pdf",
@@ -177,6 +178,10 @@ export function DocumentUpload({ courseId }: DocumentUploadProps) {
       toast.success(
         `${successCount} ${successCount === 1 ? "Dokument" : "Dokumente"} hochgeladen`
       );
+      // Track gamification for each uploaded document
+      for (let i = 0; i < successCount; i++) {
+        trackActivity("document_upload", courseId);
+      }
       // Trigger processing for uploaded documents
       try {
         const processRes = await fetch(`/api/documents/process`, {

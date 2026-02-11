@@ -13,6 +13,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
@@ -22,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
 import {
   BookOpen,
   GraduationCap,
@@ -29,6 +31,10 @@ import {
   LogOut,
   Settings,
   ChevronUp,
+  Trophy,
+  Layers,
+  Flame,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -45,14 +51,34 @@ const navItems = [
   },
 ];
 
+const secondaryNavItems = [
+  {
+    title: "Wiederholungen",
+    href: "/dashboard/courses",
+    icon: Layers,
+  },
+  {
+    title: "Erfolge",
+    href: "/dashboard/courses",
+    icon: Trophy,
+  },
+];
+
 interface AppSidebarProps {
   user: {
     email?: string;
     displayName?: string;
   };
+  gamification?: {
+    xp: number;
+    level: number;
+    currentStreak: number;
+    aiGenerationsUsed: number;
+    tier: "free" | "premium";
+  };
 }
 
-export function AppSidebar({ user }: AppSidebarProps) {
+export function AppSidebar({ user, gamification }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -72,6 +98,18 @@ export function AppSidebar({ user }: AppSidebarProps) {
     router.push("/login");
     router.refresh();
   }
+
+  // XP progress calculation
+  const xp = gamification?.xp ?? 0;
+  const level = gamification?.level ?? 1;
+  const LEVEL_THRESHOLDS = [0, 100, 250, 500, 1000, 1750, 2750, 4000, 5500, 7500, 10000, 13000, 16500, 20500, 25000];
+  const currentLevelXp = LEVEL_THRESHOLDS[level - 1] ?? 0;
+  const nextLevelXp = LEVEL_THRESHOLDS[level] ?? LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1] + 5000;
+  const xpProgress = Math.min(Math.round(((xp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100), 100);
+
+  const aiUsed = gamification?.aiGenerationsUsed ?? 0;
+  const aiLimit = gamification?.tier === "premium" ? Infinity : 20;
+  const aiRemaining = gamification?.tier === "premium" ? "\u221E" : String(20 - aiUsed);
 
   return (
     <Sidebar>
@@ -93,6 +131,27 @@ export function AppSidebar({ user }: AppSidebarProps) {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+
+        {/* XP + Streak compact display */}
+        {gamification && (
+          <div className="px-3 pb-2 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-medium">Stufe {level}</span>
+              <div className="flex items-center gap-2">
+                <Flame
+                  className={`h-3.5 w-3.5 ${(gamification.currentStreak ?? 0) > 0 ? "text-orange-500" : "text-muted-foreground"}`}
+                />
+                <span className={(gamification.currentStreak ?? 0) > 0 ? "font-medium" : "text-muted-foreground"}>
+                  {gamification.currentStreak ?? 0}
+                </span>
+              </div>
+            </div>
+            <Progress value={xpProgress} className="h-1.5" />
+            <p className="text-[10px] text-muted-foreground">
+              {xp} / {nextLevelXp} XP
+            </p>
+          </div>
+        )}
       </SidebarHeader>
 
       <SidebarContent>
@@ -116,9 +175,36 @@ export function AppSidebar({ user }: AppSidebarProps) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Lernen</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {secondaryNavItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <a href={item.href}>
+                      <item.icon className="size-4" />
+                      <span>{item.title}</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter>
+        {/* AI Usage meter */}
+        {gamification && (
+          <div className="px-3 py-2">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>KI: {aiRemaining} übrig</span>
+            </div>
+          </div>
+        )}
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>

@@ -16,6 +16,12 @@ export type Database = {
           tier: "free" | "premium";
           ai_generations_used: number;
           ai_generations_reset_at: string;
+          xp: number;
+          level: number;
+          current_streak: number;
+          longest_streak: number;
+          last_study_date: string | null;
+          onboarding_completed: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -25,6 +31,12 @@ export type Database = {
           tier?: "free" | "premium";
           ai_generations_used?: number;
           ai_generations_reset_at?: string;
+          xp?: number;
+          level?: number;
+          current_streak?: number;
+          longest_streak?: number;
+          last_study_date?: string | null;
+          onboarding_completed?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -34,6 +46,12 @@ export type Database = {
           tier?: "free" | "premium";
           ai_generations_used?: number;
           ai_generations_reset_at?: string;
+          xp?: number;
+          level?: number;
+          current_streak?: number;
+          longest_streak?: number;
+          last_study_date?: string | null;
+          onboarding_completed?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -340,6 +358,90 @@ export type Database = {
           created_at?: string;
         };
       };
+      achievements: {
+        Row: {
+          id: string;
+          key: string;
+          title_de: string;
+          description_de: string;
+          icon: string;
+          xp_reward: number;
+          category: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          key: string;
+          title_de: string;
+          description_de: string;
+          icon?: string;
+          xp_reward?: number;
+          category?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          key?: string;
+          title_de?: string;
+          description_de?: string;
+          icon?: string;
+          xp_reward?: number;
+          category?: string;
+          created_at?: string;
+        };
+      };
+      user_achievements: {
+        Row: {
+          id: string;
+          user_id: string;
+          achievement_id: string;
+          unlocked_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          achievement_id: string;
+          unlocked_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          achievement_id?: string;
+          unlocked_at?: string;
+          created_at?: string;
+        };
+      };
+      study_sessions: {
+        Row: {
+          id: string;
+          user_id: string;
+          activity_type: string;
+          course_id: string | null;
+          metadata: Json;
+          xp_earned: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          activity_type: string;
+          course_id?: string | null;
+          metadata?: Json;
+          xp_earned?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          activity_type?: string;
+          course_id?: string | null;
+          metadata?: Json;
+          xp_earned?: number;
+          created_at?: string;
+        };
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -375,6 +477,10 @@ export type FlashcardSet = Database["public"]["Tables"]["flashcard_sets"]["Row"]
 export type Flashcard = Database["public"]["Tables"]["flashcards"]["Row"];
 export type FlashcardReview = Database["public"]["Tables"]["flashcard_reviews"]["Row"];
 export type ChatMessage = Database["public"]["Tables"]["chat_messages"]["Row"];
+
+export type Achievement = Database["public"]["Tables"]["achievements"]["Row"];
+export type UserAchievement = Database["public"]["Tables"]["user_achievements"]["Row"];
+export type StudySession = Database["public"]["Tables"]["study_sessions"]["Row"];
 
 export type QuizQuestionOption = {
   label: string;

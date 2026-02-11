@@ -332,59 +332,23 @@ study_app/
 - ✅ Quiz-Generierung: Zod v4 + AI SDK 6 `generateObject()` kompatibel!
 - ✅ Flashcard-Generierung: Funktioniert
 
-**Noch offen:**
-- ❌ Chat crasht: `input` von `useChat()` ist undefined (`chat/page.tsx:227`). `@ai-sdk/react@3.0.80` API prüfen.
-- ❌ Wahr/Falsch Quiz-Fragen: Keine Antwort-Buttons. "Wahr"/"Falsch" Buttons hinzufügen.
+- ✅ Chat-Crash gefixt: `@ai-sdk/react@3.0.80` neues API (`sendMessage`, `status`, `DefaultChatTransport`, `UIMessage` parts, `toUIMessageStreamResponse()`)
+- ✅ Wahr/Falsch Quiz-Buttons: Fallback "Wahr"/"Falsch" Optionen wenn AI leere Options liefert
 
-### Phase B: UI/UX Verbesserung
+### Phase B: UI/UX Verbesserung ✅
 
-**B1. DB-Migration für Gamification** (`supabase/migrations/00002_gamification.sql`)
-- `profiles`: Neue Spalten `xp`, `level`, `current_streak`, `longest_streak`, `last_study_date`, `onboarding_completed`
-- Neue Tabellen: `achievements` (Key, Titel, Icon, XP-Belohnung), `user_achievements` (mit RLS), `study_sessions` (Aktivitäts-Tracking)
-- ~12 vordefinierte Achievements (deutsch: "Erster Kurs", "Quizmaster", "3-Tage-Streak", etc.)
-
-**B2. TypeScript Types** (`src/types/database.ts`)
-- Neue Types: Achievement, UserAchievement, StudySession
-- Profile-Type um neue Spalten erweitern
-
-**B3. Gamification Library** (`src/lib/gamification.ts`)
-- XP-Werte pro Aktivität (Quiz: 50, Flashcard Review: 10, Upload: 20, Chat: 5)
-- Level-Berechnung mit progressiven Schwellenwerten
-- Streak-Logik (Tage in Folge gelernt)
-
-**B4. Gamification API** (`src/app/api/gamification/route.ts`)
-- POST: `{ action, metadata }` → XP vergeben, Level/Streak updaten, Achievements prüfen
-
-**B5. Gamification UI-Komponenten** (`src/components/gamification/`)
-- `xp-progress.tsx` — Level + XP-Fortschrittsbalken
-- `streak-display.tsx` — Flammen-Icon + Streak-Zähler mit Puls-Animation
-- `achievement-badge.tsx` — Achievement-Anzeige (freigeschaltet/gesperrt)
-- `achievement-toast.tsx` — Feier-Toast via sonner bei neuem Achievement
-
-**B6. Dashboard Redesign** (`src/app/(dashboard)/dashboard/page.tsx`)
-- Willkommen-Header + Streak/XP-Widget
-- 4 Stats-Mini-Cards (Kurse, Dokumente, Quizzes, KI-Nutzung)
-- Letzte Aktivität + Fällige Wiederholungen
-- Wochenziel + Achievements
-
-**B7. Course Cards verbessern** (`src/components/course/course-card.tsx`)
-- Stärkerer Farbakzent mit Kursfarbe
-- Fortschrittsindikator + "Zuletzt gelernt" Timestamp
-- Hover-Effekt (Scale + Shadow)
-
-**B8. Onboarding Wizard** (`src/components/onboarding/onboarding-wizard.tsx`)
-- 5-Schritt Wizard: Willkommen → Kurs erstellen → Dokument hochladen → Features erklären → Fertig
-- Wird angezeigt wenn `profile.onboarding_completed === false`
-
-**B9. Sidebar erweitern** (`src/components/dashboard/app-sidebar.tsx`)
-- XP-Fortschrittsbalken unter Logo
-- Streak-Anzeige
-- Neue Nav-Items: "Wiederholungen", "Erfolge"
-- Kompakte KI-Nutzungsanzeige
-
-**B10. Empty States verbessern** — Engagierende Texte, Schritt-für-Schritt Hinweise
-
-**B11. Zusätzliche shadcn-Komponenten:** `alert`, `scroll-area`, `chart`, `collapsible`
+- ✅ **B1.** DB-Migration `00002_gamification.sql` (profiles-Spalten, achievements, user_achievements, study_sessions)
+- ✅ **B2.** TypeScript Types erweitert (Achievement, UserAchievement, StudySession, Profile-Gamification-Spalten)
+- ✅ **B3.** Gamification Library (`src/lib/gamification.ts`) — XP, Level, Streak, Achievement-Logik
+- ✅ **B4.** Gamification API (`/api/gamification`) — XP vergeben, Level/Streak updaten, Achievements prüfen
+- ✅ **B5.** Gamification UI-Komponenten (xp-progress, streak-display, achievement-badge, achievement-toast)
+- ✅ **B6.** Dashboard Redesign — XP/Streak-Widgets, Aktivität, fällige Reviews, Achievements
+- ✅ **B7.** Course Cards — Gradient-Akzent, Hover-Effekte, "Zuletzt gelernt"
+- ✅ **B8.** Onboarding Wizard — 5-Schritt Modal für neue User
+- ✅ **B9.** Sidebar — XP-Bar, Streak, neue Nav-Items (Wiederholungen, Erfolge), KI-Nutzung
+- ✅ **B10.** Empty States — bestehende beibehalten
+- ✅ **B11.** shadcn-Komponenten installiert (alert, scroll-area, collapsible)
+- ✅ **B12.** Gamification-Tracking integriert in Quiz, Chat, Upload, Kurs-Erstellung
 
 ### Phase C: Spaced Repetition, Fortschritt, Freemium
 

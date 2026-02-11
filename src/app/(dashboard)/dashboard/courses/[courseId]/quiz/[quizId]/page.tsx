@@ -18,6 +18,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
+import { trackActivity } from "@/lib/gamification-client";
 import type { Quiz, QuizQuestion, QuizQuestionOption } from "@/types/database";
 
 type Answer = {
@@ -69,7 +70,15 @@ export default function QuizPlayPage() {
 
   function getOptions(): QuizQuestionOption[] {
     if (!currentQuestion) return [];
-    return (currentQuestion.options as QuizQuestionOption[]) ?? [];
+    const opts = (currentQuestion.options as QuizQuestionOption[]) ?? [];
+    // Fallback for true/false questions with missing options
+    if (currentQuestion.question_type === "true_false" && opts.length === 0) {
+      return [
+        { label: "Wahr", text: "Wahr", is_correct: currentQuestion.correct_answer === "Wahr" },
+        { label: "Falsch", text: "Falsch", is_correct: currentQuestion.correct_answer === "Falsch" },
+      ];
+    }
+    return opts;
   }
 
   function handleAnswer() {
@@ -134,6 +143,13 @@ export default function QuizPlayPage() {
         completed_at: new Date().toISOString(),
       });
     }
+
+    // Track gamification
+    trackActivity(
+      score === 100 ? "perfect_quiz" : "quiz_complete",
+      courseId,
+      { score, questionCount: questions.length }
+    );
   }
 
   function restartQuiz() {

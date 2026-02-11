@@ -1,63 +1,75 @@
-import { streamText, embed } from "ai";
+import { streamText, embed, convertToModelMessages } from "ai";
 import { createClient } from "@/lib/supabase/server";
 import { getModel, getEmbeddingModel } from "@/lib/ai/provider";
 
 export async function POST(req: Request) {
-  const { messages, courseId } = await req.json();
+  try {
+    const { messages: uiMessages, courseId } = await req.json();
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) {
-    return new Response("Nicht autorisiert", { status: 401 });
-  }
-
-  if (!courseId) {
-    return new Response("courseId ist erforderlich", { status: 400 });
-  }
-
-  // Get the latest user message for RAG retrieval
-  const lastUserMessage = [...messages]
-    .reverse()
-    .find((m: { role: string }) => m.role === "user");
-
-  if (!lastUserMessage) {
-    return new Response("Keine Nachricht gefunden", { status: 400 });
-  }
-
-  // Get document IDs for this course
-  const { data: documents } = await supabase
-    .from("documents")
-    .select("id")
-    .eq("course_id", courseId)
-    .eq("status", "ready");
-
-  const documentIds = documents?.map((d) => d.id) ?? [];
-
-  let context = "";
-
-  if (documentIds.length > 0) {
-    // Embed the user query
-    const { embedding } = await embed({
-      model: getEmbeddingModel(),
-      value: lastUserMessage.content,
-    });
-
-    // Search for relevant chunks
-    const { data: chunks } = await supabase.rpc("match_document_chunks", {
-      query_embedding: JSON.stringify(embedding),
-      match_count: 6,
-      filter_document_ids: documentIds,
-    });
-
-    if (chunks && chunks.length > 0) {
-      context = chunks.map((c: { content: string }) => c.content).join("\n\n---\n\n");
+    if (!user) {
+      return new Response("Nicht autorisiert", { status: 401 });
     }
-  }
 
-  const systemPrompt = `Du bist ein hilfreicher KI-Lernassistent für deutschsprachige Universitätsstudierende. Deine Aufgabe ist es, Fragen zu den Lernmaterialien des Studierenden zu beantworten.
+    if (!courseId) {
+      return new Response("courseId ist erforderlich", { status: 400 });
+    }
+
+    // Extract text from the latest user message (UIMessage format with parts)
+    const lastUserMsg = [...uiMessages]
+      .reverse()
+      .find((m: { role: string }) => m.role === "user");
+
+    if (!lastUserMsg) {
+      return new Response("Keine Nachricht gefunden", { status: 400 });
+    }
+
+    // Extract text content from UIMessage parts array
+    const userText =
+      lastUserMsg.parts
+        ?.filter((p: { type: string }) => p.type === "text")
+        .map((p: { text: string }) => p.text)
+        .join("") ||
+      lastUserMsg.content ||
+      "";
+
+    // Get document IDs for this course
+    const { data: documents } = await supabase
+      .from("documents")
+      .select("id")
+      .eq("course_id", courseId)
+      .eq("status", "ready");
+
+    const documentIds = documents?.map((d) => d.id) ?? [];
+
+    let context = "";
+
+    if (documentIds.length > 0) {
+      // Embed the user query
+      const { embedding } = await embed({
+        model: getEmbeddingModel(),
+        value: userText,
+      });
+
+      // Search for relevant chunks
+      const { data: chunks } = await supabase.rpc("match_document_chunks", {
+        query_embedding: JSON.stringify(embedding),
+        match_count: 6,
+        filter_document_ids: documentIds,
+      });
+
+      if (chunks && chunks.length > 0) {
+        context = chunks
+          .map((c: { content: string }) => c.content)
+          .join("\n\n---\n\n");
+      }
+    }
+
+    const systemPrompt = `Du bist ein hilfreicher KI-Lernassistent für deutschsprachige Universitätsstudierende. Deine Aufgabe ist es, Fragen zu den Lernmaterialien des Studierenden zu beantworten.
 
 WICHTIGE REGELN:
 - Antworte IMMER auf Deutsch
@@ -67,47 +79,56 @@ WICHTIGE REGELN:
 - Verwende Beispiele aus dem Kontext wenn möglich
 - Formatiere deine Antworten mit Markdown für bessere Lesbarkeit
 
-${context ? `KONTEXT AUS DEN LERNMATERIALIEN:
-${context}` : "Es sind keine Lernmaterialien für diesen Kurs vorhanden. Bitte den Studierenden, zuerst Dokumente hochzuladen."}`;
+${context ? `KONTEXT AUS DEN LERNMATERIALIEN:\n${context}` : "Es sind keine Lernmaterialien für diesen Kurs vorhanden. Bitte den Studierenden, zuerst Dokumente hochzuladen."}`;
 
-  // Save user message to DB
-  await supabase.from("chat_messages").insert({
-    course_id: courseId,
-    user_id: user.id,
-    role: "user",
-    content: lastUserMessage.content,
-  });
+    // Save user message to DB
+    await supabase.from("chat_messages").insert({
+      course_id: courseId,
+      user_id: user.id,
+      role: "user",
+      content: userText,
+    });
 
-  const result = streamText({
-    model: getModel(),
-    system: systemPrompt,
-    messages,
-    onFinish: async ({ text }) => {
-      // Save assistant message to DB
-      await supabase.from("chat_messages").insert({
-        course_id: courseId,
-        user_id: user.id,
-        role: "assistant",
-        content: text,
-      });
+    // Convert UIMessage[] to ModelMessage[] for streamText
+    const modelMessages = await convertToModelMessages(uiMessages);
 
-      // Increment AI usage counter
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("ai_generations_used")
-        .eq("id", user.id)
-        .single();
+    const result = streamText({
+      model: getModel(),
+      system: systemPrompt,
+      messages: modelMessages,
+      onFinish: async ({ text }) => {
+        // Save assistant message to DB
+        await supabase.from("chat_messages").insert({
+          course_id: courseId,
+          user_id: user.id,
+          role: "assistant",
+          content: text,
+        });
 
-      if (profile) {
-        await supabase
+        // Increment AI usage counter
+        const { data: profile } = await supabase
           .from("profiles")
-          .update({
-            ai_generations_used: profile.ai_generations_used + 1,
-          })
-          .eq("id", user.id);
-      }
-    },
-  });
+          .select("ai_generations_used")
+          .eq("id", user.id)
+          .single();
 
-  return result.toDataStreamResponse();
+        if (profile) {
+          await supabase
+            .from("profiles")
+            .update({
+              ai_generations_used: profile.ai_generations_used + 1,
+            })
+            .eq("id", user.id);
+        }
+      },
+    });
+
+    return result.toUIMessageStreamResponse();
+  } catch (error) {
+    console.error("[Chat API Error]", error);
+    return new Response(
+      error instanceof Error ? error.message : "Interner Serverfehler",
+      { status: 500 }
+    );
+  }
 }

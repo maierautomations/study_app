@@ -28,6 +28,7 @@ interface CourseCardProps {
   documentCount: number;
   quizCount: number;
   flashcardSetCount: number;
+  lastStudied?: string | null;
 }
 
 export function CourseCard({
@@ -35,19 +36,28 @@ export function CourseCard({
   documentCount,
   quizCount,
   flashcardSetCount,
+  lastStudied,
 }: CourseCardProps) {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
+  const color = course.color ?? "#3b82f6";
+
   return (
     <>
       <Link href={`/dashboard/courses/${course.id}`}>
-        <Card className="group relative overflow-hidden transition-colors hover:bg-muted/50">
+        <Card className="group relative overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:shadow-lg">
+          {/* Top gradient accent */}
           <div
-            className="absolute left-0 top-0 h-full w-1"
-            style={{ backgroundColor: course.color ?? "#3b82f6" }}
+            className="absolute left-0 top-0 h-1 w-full"
+            style={{ backgroundColor: color }}
           />
-          <CardHeader className="flex flex-row items-start justify-between space-y-0 pl-5">
+          {/* Subtle background tint */}
+          <div
+            className="absolute inset-0 opacity-[0.03]"
+            style={{ backgroundColor: color }}
+          />
+          <CardHeader className="relative flex flex-row items-start justify-between space-y-0">
             <CardTitle className="text-lg leading-tight line-clamp-1">
               {course.name}
             </CardTitle>
@@ -86,25 +96,32 @@ export function CourseCard({
               </DropdownMenuContent>
             </DropdownMenu>
           </CardHeader>
-          <CardContent className="pl-5">
+          <CardContent className="relative">
             {course.description && (
               <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                 {course.description}
               </p>
             )}
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <FileText className="h-3.5 w-3.5" />
-                {documentCount}
-              </span>
-              <span className="flex items-center gap-1">
-                <BrainCircuit className="h-3.5 w-3.5" />
-                {quizCount}
-              </span>
-              <span className="flex items-center gap-1">
-                <Layers className="h-3.5 w-3.5" />
-                {flashcardSetCount}
-              </span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <FileText className="h-3.5 w-3.5" />
+                  {documentCount}
+                </span>
+                <span className="flex items-center gap-1">
+                  <BrainCircuit className="h-3.5 w-3.5" />
+                  {quizCount}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Layers className="h-3.5 w-3.5" />
+                  {flashcardSetCount}
+                </span>
+              </div>
+              {lastStudied && (
+                <span className="text-xs text-muted-foreground">
+                  Zuletzt: {new Date(lastStudied).toLocaleDateString("de-DE")}
+                </span>
+              )}
             </div>
           </CardContent>
         </Card>

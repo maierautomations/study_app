@@ -17,6 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { trackActivity } from "@/lib/gamification-client";
 import type { Course } from "@/types/database";
 
 const COURSE_COLORS = [
@@ -116,6 +117,7 @@ export function CourseFormDialog({
         return;
       }
       toast.success("Kurs erstellt");
+      trackActivity("course_create");
     }
 
     setLoading(false);

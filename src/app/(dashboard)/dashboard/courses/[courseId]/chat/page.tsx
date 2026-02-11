@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,9 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { trackActivity } from "@/lib/gamification-client";
 import type { ChatMessage } from "@/types/database";
+import type { UIMessage } from "ai";
 
 export default function ChatPage() {
   const { courseId } = useParams<{ courseId: string }>();
@@ -26,7 +29,6 @@ export default function ChatPage() {
     { id: string; role: "user" | "assistant"; content: string }[]
   >([]);
   const [loaded, setLoaded] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function loadHistory() {
@@ -64,6 +66,13 @@ export default function ChatPage() {
   );
 }
 
+function getMessageText(message: UIMessage): string {
+  return message.parts
+    .filter((p): p is { type: "text"; text: string } => p.type === "text")
+    .map((p) => p.text)
+    .join("");
+}
+
 function ChatInterface({
   courseId,
   initialMessages,
@@ -73,17 +82,49 @@ function ChatInterface({
 }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
+  const [input, setInput] = useState("");
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading } =
-    useChat({
-      api: "/api/chat",
-      body: { courseId },
-      initialMessages,
-    });
+  const uiInitialMessages = useMemo(
+    () =>
+      initialMessages.map((m) => ({
+        id: m.id,
+        role: m.role as "user" | "assistant",
+        parts: [{ type: "text" as const, text: m.content }],
+      })),
+    [initialMessages]
+  );
+
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        body: { courseId },
+      }),
+    [courseId]
+  );
+
+  const { messages, sendMessage, status, error } = useChat({
+    transport,
+    messages: uiInitialMessages,
+    onError: (err) => {
+      toast.error("Chat-Fehler", { description: err.message });
+    },
+  });
+
+  const isLoading = status === "streaming" || status === "submitted";
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  async function handleSend(e?: React.FormEvent) {
+    e?.preventDefault();
+    const text = input.trim();
+    if (!text) return;
+    setInput("");
+    await sendMessage({ text });
+    trackActivity("chat_message", courseId);
+  }
 
   async function clearHistory() {
     const {
@@ -147,21 +188,7 @@ function ChatInterface({
                   key={suggestion}
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    const form = document.querySelector("form");
-                    const input = form?.querySelector("input");
-                    if (input) {
-                      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-                        window.HTMLInputElement.prototype,
-                        "value"
-                      )?.set;
-                      nativeInputValueSetter?.call(input, suggestion);
-                      input.dispatchEvent(
-                        new Event("input", { bubbles: true })
-                      );
-                      form?.requestSubmit();
-                    }
-                  }}
+                  onClick={() => sendMessage({ text: suggestion })}
                 >
                   {suggestion}
                 </Button>
@@ -190,7 +217,7 @@ function ChatInterface({
               }`}
             >
               <div className="text-sm whitespace-pre-wrap prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-                {message.content}
+                {getMessageText(message)}
               </div>
             </Card>
             {message.role === "user" && (
@@ -212,14 +239,27 @@ function ChatInterface({
           </div>
         )}
 
+        {error && (
+          <div className="flex gap-3 justify-start">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-destructive/10">
+              <Bot className="h-4 w-4 text-destructive" />
+            </div>
+            <Card className="bg-destructive/10 p-3">
+              <p className="text-sm text-destructive">
+                Fehler: {error.message || "Etwas ist schiefgelaufen. Bitte versuche es erneut."}
+              </p>
+            </Card>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
       <div className="p-4 border-t shrink-0">
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSend} className="flex gap-2">
           <Input
             value={input}
-            onChange={handleInputChange}
+            onChange={(e) => setInput(e.target.value)}
             placeholder="Stelle eine Frage zu deinen Unterlagen..."
             disabled={isLoading}
             className="flex-1"
