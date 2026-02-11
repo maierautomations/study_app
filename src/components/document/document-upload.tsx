@@ -96,6 +96,7 @@ export function DocumentUpload({ courseId }: DocumentUploadProps) {
     if (pendingFiles.length === 0) return;
 
     setIsUploading(true);
+    let localSuccessCount = 0;
 
     const {
       data: { user },
@@ -157,6 +158,7 @@ export function DocumentUpload({ courseId }: DocumentUploadProps) {
             idx === i ? { ...f, status: "done", progress: 100 } : f
           )
         );
+        localSuccessCount++;
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unbekannter Fehler";
         setFiles((prev) =>
@@ -170,20 +172,30 @@ export function DocumentUpload({ courseId }: DocumentUploadProps) {
 
     setIsUploading(false);
 
-    const successCount = files.filter((f) => f.status === "done").length;
+    const successCount = localSuccessCount;
     if (successCount > 0) {
       toast.success(
         `${successCount} ${successCount === 1 ? "Dokument" : "Dokumente"} hochgeladen`
       );
       // Trigger processing for uploaded documents
       try {
-        await fetch(`/api/documents/process`, {
+        const processRes = await fetch(`/api/documents/process`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ courseId }),
         });
+        const processData = await processRes.json();
+        if (processData.processed > 0) {
+          toast.success(
+            `${processData.processed} Dokument(e) erfolgreich verarbeitet`
+          );
+        } else if (processData.error) {
+          toast.error("Verarbeitung fehlgeschlagen", {
+            description: processData.error,
+          });
+        }
       } catch {
-        // Processing will happen in the background
+        // Processing errors are shown via document status
       }
       router.refresh();
     }

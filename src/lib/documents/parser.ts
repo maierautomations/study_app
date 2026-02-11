@@ -1,4 +1,4 @@
-import pdf from "pdf-parse";
+import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
 
 export async function extractText(
@@ -7,8 +7,10 @@ export async function extractText(
 ): Promise<string> {
   switch (fileType) {
     case "pdf": {
-      const data = await pdf(buffer);
-      return data.text;
+      const parser = new PDFParse({ data: buffer });
+      const result = await parser.getText();
+      await parser.destroy();
+      return result.text;
     }
     case "docx": {
       const result = await mammoth.extractRawText({ buffer });

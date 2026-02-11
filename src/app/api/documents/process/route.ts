@@ -121,7 +121,8 @@ export async function POST(request: NextRequest) {
 
       processedCount++;
     } catch (err) {
-      console.error(`Error processing document ${doc.id}:`, err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error(`Error processing document ${doc.id} (${doc.name}):`, errorMessage);
 
       // Update status to error
       await supabase

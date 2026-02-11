@@ -322,23 +322,120 @@ study_app/
 10. ✅ **AI-Chat**: RAG Pipeline mit Embedding-Suche, Streaming via `streamText()`, `useChat` Hook, Chat-Verlauf persistent
 11. ✅ **Flashcards**: AI-Generierung mit `generateObject()`, Flip-Animation, Gewusst-Markierung, Mischen, Keyboard-Navigation
 
-### Phase 4: Lernfortschritt & Polish (Schritt 12-14)
-12. **Spaced Repetition**: SM-2 Algorithmus, fällige Karten, Review-Flow
-13. **Fortschritts-Dashboard**: Quiz-Scores, schwache Themen, Flashcard-Stats
-14. **Freemium**: Usage-Tracking, Limit-Enforcement, Upgrade-Prompts
+### Phase A: Bug Fix + End-to-End Validierung ✅ (größtenteils)
 
-### Phase 5: Launch-Vorbereitung (Schritt 15-16)
-15. **Landing Page**: Hero, Features, Pricing, CTA
-16. **Deployment**: Vercel Config, Env Vars, Domain, Monitoring
+**Gefixt:**
+- ✅ Stale-Closure Bug (`document-upload.tsx`): `localSuccessCount` statt stale `files` State
+- ✅ pdf-parse v2 API (`parser.ts`): Neue class-based API `new PDFParse({ data: buffer })`
+- ✅ Retry-Button für fehlgeschlagene Dokumente (`course-detail.tsx`)
+- ✅ Dokument-Verarbeitung: Upload → Extraktion → Chunking → Embedding → Status "ready"
+- ✅ Quiz-Generierung: Zod v4 + AI SDK 6 `generateObject()` kompatibel!
+- ✅ Flashcard-Generierung: Funktioniert
+
+**Noch offen:**
+- ❌ Chat crasht: `input` von `useChat()` ist undefined (`chat/page.tsx:227`). `@ai-sdk/react@3.0.80` API prüfen.
+- ❌ Wahr/Falsch Quiz-Fragen: Keine Antwort-Buttons. "Wahr"/"Falsch" Buttons hinzufügen.
+
+### Phase B: UI/UX Verbesserung
+
+**B1. DB-Migration für Gamification** (`supabase/migrations/00002_gamification.sql`)
+- `profiles`: Neue Spalten `xp`, `level`, `current_streak`, `longest_streak`, `last_study_date`, `onboarding_completed`
+- Neue Tabellen: `achievements` (Key, Titel, Icon, XP-Belohnung), `user_achievements` (mit RLS), `study_sessions` (Aktivitäts-Tracking)
+- ~12 vordefinierte Achievements (deutsch: "Erster Kurs", "Quizmaster", "3-Tage-Streak", etc.)
+
+**B2. TypeScript Types** (`src/types/database.ts`)
+- Neue Types: Achievement, UserAchievement, StudySession
+- Profile-Type um neue Spalten erweitern
+
+**B3. Gamification Library** (`src/lib/gamification.ts`)
+- XP-Werte pro Aktivität (Quiz: 50, Flashcard Review: 10, Upload: 20, Chat: 5)
+- Level-Berechnung mit progressiven Schwellenwerten
+- Streak-Logik (Tage in Folge gelernt)
+
+**B4. Gamification API** (`src/app/api/gamification/route.ts`)
+- POST: `{ action, metadata }` → XP vergeben, Level/Streak updaten, Achievements prüfen
+
+**B5. Gamification UI-Komponenten** (`src/components/gamification/`)
+- `xp-progress.tsx` — Level + XP-Fortschrittsbalken
+- `streak-display.tsx` — Flammen-Icon + Streak-Zähler mit Puls-Animation
+- `achievement-badge.tsx` — Achievement-Anzeige (freigeschaltet/gesperrt)
+- `achievement-toast.tsx` — Feier-Toast via sonner bei neuem Achievement
+
+**B6. Dashboard Redesign** (`src/app/(dashboard)/dashboard/page.tsx`)
+- Willkommen-Header + Streak/XP-Widget
+- 4 Stats-Mini-Cards (Kurse, Dokumente, Quizzes, KI-Nutzung)
+- Letzte Aktivität + Fällige Wiederholungen
+- Wochenziel + Achievements
+
+**B7. Course Cards verbessern** (`src/components/course/course-card.tsx`)
+- Stärkerer Farbakzent mit Kursfarbe
+- Fortschrittsindikator + "Zuletzt gelernt" Timestamp
+- Hover-Effekt (Scale + Shadow)
+
+**B8. Onboarding Wizard** (`src/components/onboarding/onboarding-wizard.tsx`)
+- 5-Schritt Wizard: Willkommen → Kurs erstellen → Dokument hochladen → Features erklären → Fertig
+- Wird angezeigt wenn `profile.onboarding_completed === false`
+
+**B9. Sidebar erweitern** (`src/components/dashboard/app-sidebar.tsx`)
+- XP-Fortschrittsbalken unter Logo
+- Streak-Anzeige
+- Neue Nav-Items: "Wiederholungen", "Erfolge"
+- Kompakte KI-Nutzungsanzeige
+
+**B10. Empty States verbessern** — Engagierende Texte, Schritt-für-Schritt Hinweise
+
+**B11. Zusätzliche shadcn-Komponenten:** `alert`, `scroll-area`, `chart`, `collapsible`
+
+### Phase C: Spaced Repetition, Fortschritt, Freemium
+
+**C1. SM-2 Algorithmus** (`src/lib/spaced-repetition/sm2.ts`)
+- SuperMemo SM-2: quality(0-5) + bisherige Werte → neue Intervalle + nächstes Review-Datum
+- Hinweis: `flashcard_reviews` Tabelle existiert bereits im Schema mit SM-2 Feldern
+
+**C2. Review API Routes**
+- `POST /api/flashcards/review` — Review aufzeichnen, SM-2 ausführen
+- `GET /api/flashcards/due` — Fällige Flashcards abrufen (next_review_at ≤ now + noch nie reviewte)
+
+**C3. Review Session Pages**
+- `/dashboard/reviews` — Übersicht: Fällige Karten nach Kurs gruppiert
+- `/dashboard/reviews/[courseId]` — Interaktive Session: Karte flippen → Bewerten (Nochmal/Schwer/Gut/Einfach) → SM-2 → Nächste Karte → Zusammenfassung
+
+**C4. Achievements Page** (`/dashboard/achievements`)
+- Grid aller Achievements: Freigeschaltet (farbig + Datum) / Gesperrt (grau + Beschreibung)
+- Nach Kategorie gruppiert, Gesamt-XP Anzeige
+
+**C5. Freemium Enforcement**
+- `src/lib/freemium.ts` — Wiederverwendbare `checkFreemiumLimit()` Funktion
+- Limit-Check vor AI-Calls in: Quiz-Generate, Flashcard-Generate, Chat
+- 429 Response mit deutscher Fehlermeldung bei Limit (20/Monat)
+- Monatlicher Reset-Mechanismus
+
+**C6. Nutzungszähler-Komponente** (`src/components/gamification/usage-meter.tsx`)
+- Visueller Balken: grün → gelb → rot
+- In Sidebar und Dashboard
+
+### Phase D: Landing Page + Deployment
+
+**D1. Landing Page** (`src/app/page.tsx` — ersetzt Next.js Boilerplate)
+- Navbar: Logo | Features | Login | Registrieren
+- Hero: Titel + Untertitel + CTA + Screenshot/Mockup
+- Features: 3-Spalten (Dokumente, Quizzes, Chat)
+- "So funktioniert's": 4-Schritt visueller Ablauf
+- Spaced Repetition Feature-Highlight
+- Finaler CTA + Footer
+- Server Component: Zeigt "Zum Dashboard" für eingeloggte User
+
+**D2. Vercel Deployment**
+- `maxDuration` für API Routes (Process: 60s, Quiz/Flashcard: 30s)
+- `npm run build` muss fehlerfrei durchlaufen
+- Environment Variables in Vercel Dashboard konfigurieren
+- Deployment + Produktions-Test
 
 ---
 
-## Verifikation / Testing
+## Verifikation pro Phase
 
-- **Manuell**: Dokument hochladen → Quiz generieren → Quiz spielen → Chat nutzen → Flashcards lernen
-- **Unit Tests**: AI-Prompt-Parsing, SM-2 Algorithmus, Chunking-Logik
-- **E2E**: Kompletter User-Flow von Registrierung bis Quiz-Auswertung
-- **AI-Qualität**: Stichprobenartig generierte Quizfragen auf Relevanz und Korrektheit prüfen
-- **Performance**: Embedding-Generierung und Vektor-Suche Latenz messen
-- `npm run build` muss fehlerfrei durchlaufen
-- Lighthouse Score > 90 für Landing Page
+1. **Phase A:** Dokument hochladen → verarbeitet zu "ready" → Quiz/Flashcard/Chat funktionieren
+2. **Phase B:** Neuer User sieht Onboarding → Dashboard zeigt XP/Streaks/Aktivität → Gamification funktioniert
+3. **Phase C:** Review Session: Karten flippen + bewerten → SM-2 plant nächstes Review → Freemium blockiert bei Limit
+4. **Phase D:** Landing Page rendert → `npm run build` sauber → Vercel Deployment funktioniert

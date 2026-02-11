@@ -17,7 +17,11 @@ import {
   Sparkles,
   Pencil,
   Trash2,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 import { CourseFormDialog } from "./course-form-dialog";
 import { DeleteCourseDialog } from "./delete-course-dialog";
 import { DocumentUpload } from "@/components/document/document-upload";
@@ -38,7 +42,38 @@ export function CourseDetail({
 }: CourseDetailProps) {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [retryingDocId, setRetryingDocId] = useState<string | null>(null);
   const router = useRouter();
+  const supabase = createClient();
+
+  async function retryDocument(docId: string) {
+    setRetryingDocId(docId);
+    try {
+      await supabase
+        .from("documents")
+        .update({ status: "uploading" })
+        .eq("id", docId);
+
+      const res = await fetch("/api/documents/process", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ courseId: course.id }),
+      });
+      const data = await res.json();
+      if (data.processed > 0) {
+        toast.success("Dokument erfolgreich verarbeitet");
+      } else {
+        toast.error("Verarbeitung fehlgeschlagen", {
+          description: data.error || "Prüfe deine OpenAI API Credits auf platform.openai.com/billing",
+        });
+      }
+      router.refresh();
+    } catch {
+      toast.error("Verarbeitung fehlgeschlagen");
+    } finally {
+      setRetryingDocId(null);
+    }
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -138,23 +173,43 @@ export function CourseDetail({
                         </p>
                       </div>
                     </div>
-                    <Badge
-                      variant={
-                        doc.status === "ready"
-                          ? "default"
-                          : doc.status === "error"
-                            ? "destructive"
-                            : "secondary"
-                      }
-                    >
-                      {doc.status === "ready"
-                        ? "Bereit"
-                        : doc.status === "processing"
-                          ? "Wird verarbeitet..."
-                          : doc.status === "uploading"
-                            ? "Wird hochgeladen..."
-                            : "Fehler"}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {doc.status === "error" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2"
+                          disabled={retryingDocId === doc.id}
+                          onClick={() => retryDocument(doc.id)}
+                        >
+                          {retryingDocId === doc.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-3.5 w-3.5" />
+                          )}
+                          <span className="ml-1 text-xs">
+                            {retryingDocId === doc.id ? "Wird verarbeitet..." : "Erneut verarbeiten"}
+                          </span>
+                        </Button>
+                      )}
+                      <Badge
+                        variant={
+                          doc.status === "ready"
+                            ? "default"
+                            : doc.status === "error"
+                              ? "destructive"
+                              : "secondary"
+                        }
+                      >
+                        {doc.status === "ready"
+                          ? "Bereit"
+                          : doc.status === "processing"
+                            ? "Wird verarbeitet..."
+                            : doc.status === "uploading"
+                              ? "Wird hochgeladen..."
+                              : "Fehler"}
+                      </Badge>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
