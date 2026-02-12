@@ -96,6 +96,7 @@ export type Database = {
           file_size: number;
           status: "uploading" | "processing" | "ready" | "error";
           content_text: string | null;
+          summary: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -109,6 +110,7 @@ export type Database = {
           file_size: number;
           status?: "uploading" | "processing" | "ready" | "error";
           content_text?: string | null;
+          summary?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -122,6 +124,7 @@ export type Database = {
           file_size?: number;
           status?: "uploading" | "processing" | "ready" | "error";
           content_text?: string | null;
+          summary?: string | null;
           created_at?: string;
           updated_at?: string;
         };

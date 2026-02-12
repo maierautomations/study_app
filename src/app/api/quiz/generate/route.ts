@@ -34,6 +34,26 @@ function getDifficultyPrompt(difficulty: string): string {
   }
 }
 
+const QUESTION_TYPE_LABELS: Record<string, string> = {
+  multiple_choice: "Multiple Choice (4 Antwortoptionen A, B, C, D, genau eine richtig)",
+  true_false: "Wahr/Falsch (2 Optionen: Wahr, Falsch, genau eine richtig)",
+  free_text: "Freitext (keine Optionen, korrekte Antwort als Kurztext)",
+};
+
+function getQuestionTypesPrompt(types?: string[]): string {
+  const validTypes = (types ?? ["multiple_choice", "true_false", "free_text"]).filter(
+    (t) => t in QUESTION_TYPE_LABELS
+  );
+  if (validTypes.length === 0 || validTypes.length === 3) {
+    return `Erstelle eine Mischung aus verschiedenen Fragetypen:
+- multiple_choice: 4 Antwortoptionen (A, B, C, D), genau eine richtig
+- true_false: 2 Optionen (Wahr, Falsch), genau eine richtig
+- free_text: Keine Optionen, die korrekte Antwort als Kurztext`;
+  }
+  const lines = validTypes.map((t) => `- ${t}: ${QUESTION_TYPE_LABELS[t]}`);
+  return `Erstelle NUR folgende Fragetypen:\n${lines.join("\n")}`;
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
@@ -53,7 +73,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { courseId, documentIds, difficulty, questionCount, title } =
+  const { courseId, documentIds, difficulty, questionCount, questionTypes, title } =
     await request.json();
 
   if (!courseId || !documentIds?.length || !difficulty || !questionCount) {
@@ -113,10 +133,7 @@ Basierend auf dem folgenden Lernmaterial, erstelle genau ${questionCount} Quizfr
 
 ${difficultyPrompt}
 
-Erstelle eine Mischung aus verschiedenen Fragetypen:
-- multiple_choice: 4 Antwortoptionen (A, B, C, D), genau eine richtig
-- true_false: 2 Optionen (Wahr, Falsch), genau eine richtig
-- free_text: Keine Optionen, die korrekte Antwort als Kurztext
+${getQuestionTypesPrompt(questionTypes)}
 
 Für jede Frage:
 - Formuliere die Frage klar und eindeutig auf Deutsch

@@ -35,6 +35,11 @@ export default function NewQuizPage() {
   const [title, setTitle] = useState("");
   const [difficulty, setDifficulty] = useState("medium");
   const [questionCount, setQuestionCount] = useState("10");
+  const [questionTypes, setQuestionTypes] = useState({
+    multiple_choice: true,
+    true_false: true,
+    free_text: true,
+  });
   const [loading, setLoading] = useState(false);
   const [loadingDocs, setLoadingDocs] = useState(true);
 
@@ -69,11 +74,25 @@ export default function NewQuizPage() {
     );
   }
 
+  function toggleQuestionType(type: keyof typeof questionTypes) {
+    const newTypes = { ...questionTypes, [type]: !questionTypes[type] };
+    // Ensure at least one type is selected
+    if (!newTypes.multiple_choice && !newTypes.true_false && !newTypes.free_text) {
+      toast.error("Mindestens ein Fragetyp muss ausgewählt sein");
+      return;
+    }
+    setQuestionTypes(newTypes);
+  }
+
   async function handleGenerate() {
     if (selectedDocIds.length === 0) {
       toast.error("Bitte wähle mindestens ein Dokument aus");
       return;
     }
+
+    const selectedTypes = Object.entries(questionTypes)
+      .filter(([, v]) => v)
+      .map(([k]) => k);
 
     setLoading(true);
 
@@ -86,6 +105,7 @@ export default function NewQuizPage() {
           documentIds: selectedDocIds,
           difficulty,
           questionCount: parseInt(questionCount),
+          questionTypes: selectedTypes,
           title: title.trim() || undefined,
         }),
       });
@@ -227,6 +247,39 @@ export default function NewQuizPage() {
                 <SelectItem value="20">20 Fragen</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Fragetypen</Label>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: "multiple_choice" as const, label: "Multiple Choice" },
+              { key: "true_false" as const, label: "Wahr / Falsch" },
+              { key: "free_text" as const, label: "Offene Fragen" },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                className={`flex items-center gap-2 px-3 py-2 text-sm border rounded-lg transition-colors ${
+                  questionTypes[key]
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:bg-muted/50"
+                }`}
+                onClick={() => toggleQuestionType(key)}
+              >
+                <div
+                  className={`flex h-4 w-4 items-center justify-center rounded border transition-colors ${
+                    questionTypes[key]
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-muted-foreground/50"
+                  }`}
+                >
+                  {questionTypes[key] && <Check className="h-3 w-3" />}
+                </div>
+                {label}
+              </button>
+            ))}
           </div>
         </div>
 

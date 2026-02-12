@@ -19,12 +19,15 @@ import {
   Trash2,
   RefreshCw,
   Loader2,
+  BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { CourseFormDialog } from "./course-form-dialog";
 import { DeleteCourseDialog } from "./delete-course-dialog";
 import { DocumentUpload } from "@/components/document/document-upload";
+import { SummaryView } from "@/components/document/summary-view";
+import { WeaknessChart } from "@/components/progress/weakness-chart";
 import type { Course, Document, Quiz, FlashcardSet } from "@/types/database";
 
 interface CourseDetailProps {
@@ -150,6 +153,10 @@ export function CourseDetail({
             <MessageSquare className="h-4 w-4" />
             Chat
           </TabsTrigger>
+          <TabsTrigger value="progress" className="gap-1.5">
+            <BarChart3 className="h-4 w-4" />
+            Fortschritt
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="documents" className="mt-6 space-y-6">
@@ -213,6 +220,24 @@ export function CourseDetail({
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          )}
+
+          {documents.some((d) => d.status === "ready") && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Zusammenfassungen
+              </h3>
+              {documents
+                .filter((d) => d.status === "ready")
+                .map((doc) => (
+                  <SummaryView
+                    key={doc.id}
+                    documentId={doc.id}
+                    documentName={doc.name}
+                    cachedSummary={(doc as Document & { summary?: string | null }).summary ?? null}
+                  />
+                ))}
             </div>
           )}
         </TabsContent>
@@ -369,6 +394,20 @@ export function CourseDetail({
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="progress" className="mt-6">
+          <WeaknessChart
+            courseId={course.id}
+            documents={documents
+              .filter((d) => d.status === "ready")
+              .map((d) => ({ id: d.id, name: d.name }))}
+            quizzes={quizzes.map((q) => ({
+              id: q.id,
+              title: q.title,
+              document_ids: q.document_ids,
+            }))}
+          />
         </TabsContent>
       </Tabs>
 
