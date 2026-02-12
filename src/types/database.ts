@@ -97,6 +97,7 @@ export type Database = {
           status: "uploading" | "processing" | "ready" | "error";
           content_text: string | null;
           summary: string | null;
+          glossary: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -111,6 +112,7 @@ export type Database = {
           status?: "uploading" | "processing" | "ready" | "error";
           content_text?: string | null;
           summary?: string | null;
+          glossary?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -125,6 +127,7 @@ export type Database = {
           status?: "uploading" | "processing" | "ready" | "error";
           content_text?: string | null;
           summary?: string | null;
+          glossary?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -445,6 +448,59 @@ export type Database = {
           created_at?: string;
         };
       };
+      exam_attempts: {
+        Row: {
+          id: string;
+          course_id: string;
+          user_id: string;
+          title: string;
+          document_ids: string[];
+          time_limit_minutes: number;
+          questions: Json;
+          answers: Json;
+          score: number;
+          grade: string;
+          total_points: number;
+          earned_points: number;
+          started_at: string;
+          completed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          course_id: string;
+          user_id: string;
+          title: string;
+          document_ids: string[];
+          time_limit_minutes: number;
+          questions: Json;
+          answers?: Json;
+          score?: number;
+          grade?: string;
+          total_points?: number;
+          earned_points?: number;
+          started_at?: string;
+          completed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          course_id?: string;
+          user_id?: string;
+          title?: string;
+          document_ids?: string[];
+          time_limit_minutes?: number;
+          questions?: Json;
+          answers?: Json;
+          score?: number;
+          grade?: string;
+          total_points?: number;
+          earned_points?: number;
+          started_at?: string;
+          completed_at?: string | null;
+          created_at?: string;
+        };
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -485,6 +541,8 @@ export type Achievement = Database["public"]["Tables"]["achievements"]["Row"];
 export type UserAchievement = Database["public"]["Tables"]["user_achievements"]["Row"];
 export type StudySession = Database["public"]["Tables"]["study_sessions"]["Row"];
 
+export type ExamAttempt = Database["public"]["Tables"]["exam_attempts"]["Row"];
+
 export type QuizQuestionOption = {
   label: string;
   text: string;
@@ -495,4 +553,21 @@ export type QuizAnswer = {
   question_id: string;
   selected_answer: string;
   is_correct: boolean;
+};
+
+export type ExamQuestion = {
+  id: string;
+  question_text: string;
+  question_type: "multiple_choice" | "true_false" | "free_text";
+  options: QuizQuestionOption[];
+  correct_answer: string;
+  explanation: string;
+  points: number;
+};
+
+export type ExamAnswer = {
+  question_id: string;
+  selected_answer: string;
+  is_correct: boolean;
+  points_earned: number;
 };

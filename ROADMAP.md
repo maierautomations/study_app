@@ -1,6 +1,6 @@
 # StudyApp — Feature-Roadmap & Pricing-Strategie
 
-> Erstellt: 2026-02-11 | Status: Phase 1-3 + A + B + C + D abgeschlossen | Nächste: Phase E
+> Erstellt: 2026-02-11 | Status: Phase 1-3 + A + B + C + D abgeschlossen, E1-E3 ✅ | Nächste: E4-E6, Phase F
 
 ---
 
@@ -224,12 +224,12 @@ async function checkFreemiumLimit(userId: string): Promise<{
 
 ---
 
-### Phase E: Premium-Features
+### Phase E: Premium-Features (in Arbeit, E1-E3 ✅)
 
 > **Ziel**: Premium-Features die den Upgrade-Preis rechtfertigen und die App klar von Wettbewerbern differenzieren.
 > **Geschätzter Umfang**: ~15 Dateien
 
-#### E1. Klausur-Simulator
+#### E1. Klausur-Simulator ✅
 **Dateien**:
 - `src/app/api/exam/generate/route.ts` (neu) — POST: Generiert Probeklausur (gewichtete Frageauswahl nach Schwäche, Zeitlimit, Punkteverteilung)
 - `src/app/(dashboard)/dashboard/courses/[courseId]/exam/page.tsx` (neu) — Klausur-UI
@@ -257,7 +257,7 @@ Features:
 - Historische Klausur-Ergebnisse vergleichen
 ```
 
-#### E2. Multi-Output Generation (75% Token-Ersparnis)
+#### E2. Multi-Output Generation (75% Token-Ersparnis) ✅
 **Datei**: `src/app/api/documents/generate-all/route.ts` (neu)
 
 ```
@@ -275,7 +275,7 @@ Trigger: "Alles generieren" Button auf Kurs-Detailseite
 Nur für Basis + Pro User.
 ```
 
-#### E3. Fachbegriff-Glossar
+#### E3. Fachbegriff-Glossar ✅
 **Dateien**:
 - `src/app/api/documents/glossary/route.ts` (neu) — POST: Extrahiert Fachbegriffe + Definitionen aus Chunks
 - `src/components/document/glossary-view.tsx` (neu) — Alphabetisch sortiert, durchsuchbar, verlinkt zu Quell-Chunks
@@ -287,7 +287,7 @@ Hoher wahrgenommener Wert für Studierende!
 Bonus: Glossar-Begriffe als Flashcards exportieren (0 Extra-Kosten)
 ```
 
-#### E4. Lernplan-Generator (Pro only)
+#### E4. Lernplan-Generator (Pro only) ⏳ (API fertig)
 **Dateien**:
 - `src/app/api/study-plan/generate/route.ts` (neu) — POST: Prüfungsdatum + Stoffmenge + bisherige Scores → AI generiert Tagesplan
 - `src/components/study-plan/plan-view.tsx` (neu) — Kalender-Ansicht, tägliche Aufgaben, Fortschrittsbalken
@@ -608,12 +608,12 @@ Noch hinzufügen (Phase D/E):
 
 ### ~~Phase D~~ ✅ Abgeschlossen (2026-02-12)
 
-### Jetzt (Phase E) — Premium-Features — 3-4 Wochen
-1. Klausur-Simulator (Killer-Feature, stärkster Conversion Trigger)
-2. Multi-Output Generation (Kostenoptimierung)
-3. Fachbegriff-Glossar (günstig, schnell, hoher Wert)
-4. Export (PDF/Anki)
-5. Lernplan-Generator (Pro-Differenzierung)
+### Jetzt (Phase E) — Premium-Features — In Arbeit
+1. ✅ Klausur-Simulator (Killer-Feature, stärkster Conversion Trigger)
+2. ✅ Multi-Output Generation (Kostenoptimierung)
+3. ✅ Fachbegriff-Glossar (günstig, schnell, hoher Wert)
+4. ⏳ Lernplan-Generator (API fertig, UI ausstehend)
+5. Export (PDF/Anki)
 6. Notenprognose (algorithmisch)
 
 ### Monetarisierung + Deployment + Wachstum (Phase F) — 3-4 Wochen

@@ -399,6 +399,32 @@ study_app/
 - Checkboxen: MC / Wahr-Falsch / Offene Fragen (min. 1 ausgewählt)
 - `getQuestionTypesPrompt()` in Quiz-Generate API
 
+### Phase E: Premium-Features (in Arbeit)
+
+**E1. Klausur-Simulator** ✅
+- `src/app/api/exam/generate/route.ts` — Probeklausur generieren (gewichtete Schwächen, Fragetyp-Mix, Zeitlimit)
+- `src/app/api/exam/submit/route.ts` — Klausur abgeben + deutsches Notensystem (1,0-5,0)
+- `src/components/exam/exam-session.tsx` — Timer, Fragenavigation (Pills), MC/WF/Freitext, Abgabe-Bestätigung
+- `src/components/exam/exam-result.tsx` — Notenergebnis, Punkteverteilung, Fragen-Review mit Erklärungen
+- `src/app/(dashboard)/dashboard/courses/[courseId]/exam/page.tsx` — Konfiguration + historische Ergebnisse
+- `supabase/migrations/00004_exam_simulator.sql` — `exam_attempts` Tabelle mit RLS
+- "Klausur"-Tab in Kurs-Detailseite
+
+**E2. Multi-Output Generation** ✅
+- `src/app/api/documents/generate-all/route.ts` — Ein API-Call → 10 Quiz-Fragen + 20 Flashcards + Zusammenfassung
+- "Alles generieren" Button auf Kurs-Detailseite (Dokumente-Tab)
+- Zählt als 1 KI-Generierung (spart ~75% API-Calls)
+
+**E3. Fachbegriff-Glossar** ✅
+- `src/app/api/documents/glossary/route.ts` — 15-30 Fachbegriffe + Definitionen + Kontext extrahieren
+- `src/components/document/glossary-view.tsx` — Alphabetisch gruppiert, durchsuchbar, lazy generation
+- `supabase/migrations/00005_glossary_column.sql` — `documents.glossary` Spalte
+- Integriert in Kurs-Detailseite (Dokumente-Tab, unter Zusammenfassungen)
+
+**E4. Lernplan-Generator (Pro only)** ⏳ (API fertig, UI ausstehend)
+- `src/app/api/study-plan/generate/route.ts` — Prüfungsdatum + Lernzeit → Tag-für-Tag Plan
+- UI-Seite + Komponente noch ausstehend
+
 ---
 
 ## Verifikation pro Phase
@@ -407,5 +433,5 @@ study_app/
 2. **Phase B:** ✅ Neuer User sieht Onboarding → Dashboard zeigt XP/Streaks/Aktivität → Gamification funktioniert
 3. **Phase C:** ✅ Review Session: Karten flippen + bewerten → SM-2 plant nächstes Review → Freemium blockiert bei Limit
 4. **Phase D:** ✅ Landing Page rendert → `npm run build` sauber → DSGVO-Seiten vorhanden → Zusammenfassungen + Schwächenanalyse funktionieren
-5. **Phase E:** Klausur-Simulator + Premium-Features funktionieren
+5. **Phase E:** ⏳ E1 (Klausur-Simulator) ✅, E2 (Multi-Output) ✅, E3 (Glossar) ✅, E4 (Lernplan) API ✅ — Rest ausstehend
 6. **Phase F:** Stripe-Zahlung funktioniert → Vercel Deployment läuft → App produktionsreif

@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-StudyApp is an AI-powered exam preparation web app for German-speaking university students. Users upload their study materials (PDFs, DOCX, TXT), and the app generates quizzes, flashcards, and provides a RAG-based chat that explains content strictly from uploaded documents. Features include spaced repetition (SM-2) for flashcard reviews, a gamification system (XP, levels, streaks, achievements), freemium enforcement (20 AI generations/month free), document summaries, weakness analysis, and a full landing page with DSGVO compliance. The UI is entirely in German.
+StudyApp is an AI-powered exam preparation web app for German-speaking university students. Users upload their study materials (PDFs, DOCX, TXT), and the app generates quizzes, flashcards, and provides a RAG-based chat that explains content strictly from uploaded documents. Features include spaced repetition (SM-2) for flashcard reviews, a gamification system (XP, levels, streaks, achievements), freemium enforcement (20 AI generations/month free), document summaries, weakness analysis, exam simulator with German grading, multi-output generation, glossary extraction, study plan generator, and a full landing page with DSGVO compliance. The UI is entirely in German.
 
 ## Current Status
 
-**Phases 1-3, A, B, C, D are complete. Next: Phase E (Premium Features).**
+**Phases 1-3, A, B, C, D are complete. Phase E partially complete (E1-E3 done, E4 API done). Next: E4 page/component, E5 Export, E6 Notenprognose.**
 
 See `ROADMAP.md` for the full feature roadmap and `PLAN.md` for architectural details.
 
@@ -32,14 +32,14 @@ See `ROADMAP.md` for the full feature roadmap and `PLAN.md` for architectural de
 ### Route Groups
 - `src/app/(auth)/` — Public auth pages (login, register). No layout wrapper.
 - `src/app/(dashboard)/` — Authenticated area with sidebar layout. The layout (`layout.tsx`) checks auth via `supabase.auth.getUser()` and redirects unauthenticated users.
-- `src/app/api/` — API routes for document processing, quiz/flashcard generation, summaries, and streaming chat.
+- `src/app/api/` — API routes for document processing, quiz/flashcard generation, summaries, exam simulator, glossary, study plan, multi-output, and streaming chat.
 - `src/app/impressum/` and `src/app/datenschutz/` — Public legal pages (DSGVO compliance).
 
 ### Supabase Integration
 - **Browser client**: `src/lib/supabase/client.ts` — use in client components
 - **Server client**: `src/lib/supabase/server.ts` — use in Server Components and API routes (async, uses `cookies()`)
 - **Middleware**: `src/middleware.ts` delegates to `src/lib/supabase/middleware.ts` for session refresh and route protection
-- **Database types**: `src/types/database.ts` — manually maintained typed schema matching `supabase/migrations/00001_initial_schema.sql`, `00002_gamification.sql`, and `00003_document_summary.sql`
+- **Database types**: `src/types/database.ts` — manually maintained typed schema matching `supabase/migrations/00001_initial_schema.sql`, `00002_gamification.sql`, `00003_document_summary.sql`, `00004_exam_simulator.sql`, and `00005_glossary_column.sql`
 - All tables use **Row Level Security (RLS)** — data is scoped to `auth.uid()`. Child tables (chunks, questions, flashcards) use `exists` subqueries to verify ownership through parent tables.
 - A trigger `handle_new_user()` auto-creates a profile row on signup.
 - Storage bucket `documents` uses folder-based RLS: files stored at `{user_id}/{filename}`.
@@ -50,6 +50,10 @@ See `ROADMAP.md` for the full feature roadmap and `PLAN.md` for architectural de
 - Quiz generation: `POST /api/quiz/generate` uses `generateObject()` with Zod schema for structured quiz output. Accepts `questionTypes` parameter to filter MC/TF/open questions.
 - Flashcard generation: `POST /api/flashcards/generate` uses `generateObject()` for structured flashcard output
 - Document summaries: `POST /api/documents/summarize` uses `generateObject()` for structured summaries (title, keyPoints, keywords, summary). Cached in `documents.summary` column.
+- Multi-output generation: `POST /api/documents/generate-all` generates 10 quiz questions + 20 flashcards + 1 summary in a single API call (saves ~75% API calls). Button on course detail Documents tab.
+- Exam generation: `POST /api/exam/generate` creates exam questions with weakness-weighted selection, `POST /api/exam/submit` grades answers with German grading system (1,0-5,0).
+- Glossary extraction: `POST /api/documents/glossary` extracts 15-30 technical terms with definitions. Cached in `documents.glossary` column.
+- Study plan generation: `POST /api/study-plan/generate` creates day-by-day study plan based on exam date and course materials (Pro only).
 - RAG Chat: `POST /api/chat` uses `streamText()` with embedding-based retrieval + `toUIMessageStreamResponse()`; client uses `useChat` from `@ai-sdk/react` with `DefaultChatTransport`
 - RAG pipeline: embed user query → pgvector similarity search via `match_document_chunks()` SQL function → pass relevant chunks as context to LLM
 - **IMPORTANT (AI SDK 6):** `useChat()` returns `{ messages, sendMessage, status }` — NOT `input`/`handleSubmit`/`isLoading`. Server must return `toUIMessageStreamResponse()` (NOT `toDataStreamResponse` which no longer exists). Client must use `DefaultChatTransport` and manage input state manually with `useState`.
@@ -100,6 +104,29 @@ The course detail page (`/dashboard/courses/[courseId]`) uses client-side tabs (
 - `src/components/progress/weakness-chart.tsx` — Weakness chart with per-document error rates, quiz score history, overview stats
 - Integrated as "Fortschritt" tab in course detail page
 
+### Exam Simulator (Phase E1)
+- `POST /api/exam/generate` — Generates exam questions (50% MC, 25% TF, 25% free text) with point values (MC=2, TF=1, FT=3). Weakness-weighted: analyzes past quiz attempts to emphasize weak topics. Freemium-checked.
+- `POST /api/exam/submit` — Grades exam answers, maps score to German grade (1,0-5,0), stores results.
+- `src/components/exam/exam-session.tsx` — Full exam UI: countdown timer (color-coded: green→yellow→red→pulse), question navigation pills, MC/TF/free text input, confirm-before-submit with unanswered warning. Auto-submits when time expires.
+- `src/components/exam/exam-result.tsx` — Result view: large grade display with color coding, points breakdown, per-question review with correct/wrong markers and explanations.
+- `/dashboard/courses/[courseId]/exam` — Exam config page (time limit 30-120min, 10-30 questions) + past attempt history.
+- DB: `exam_attempts` table with questions/answers as JSONB, grade, score, points, timing.
+- "Klausur" tab added to course detail page.
+
+### Multi-Output Generation (Phase E2)
+- `POST /api/documents/generate-all` — Single API call generates 10 quiz questions + 20 flashcards + 1 summary. Stores quiz in `quizzes`/`quiz_questions`, flashcards in `flashcard_sets`/`flashcards`, summary cached in `documents.summary`. Counts as 1 AI generation.
+- "Alles generieren" button in course detail Documents tab (highlighted card with Zap icon).
+
+### Glossary (Phase E3)
+- `POST /api/documents/glossary` — Extracts 15-30 technical terms with definitions and context from document chunks. Cached in `documents.glossary` column (JSON string).
+- `src/components/document/glossary-view.tsx` — Alphabetically grouped, searchable glossary per document. Lazy generation (click to create).
+- DB: `documents.glossary` column (text, nullable). Migration: `00005_glossary_column.sql`.
+- Displayed in course detail Documents tab below summaries.
+
+### Study Plan Generator (Phase E4, Pro only)
+- `POST /api/study-plan/generate` — Takes courseId, examDate, dailyMinutes. Generates day-by-day plan with tasks (read, quiz, flashcards, review, exam). Pro tier check (403 for non-Pro).
+- `src/app/(dashboard)/dashboard/study-plan/page.tsx` — Study plan page (WIP).
+
 ## Key Conventions
 
 - Path alias `@/*` maps to `./src/*`
@@ -111,6 +138,7 @@ The course detail page (`/dashboard/courses/[courseId]`) uses client-side tabs (
 - Course components in `src/components/course/`, document components in `src/components/document/`
 - Gamification components in `src/components/gamification/`, onboarding in `src/components/onboarding/`
 - Freemium components in `src/components/freemium/`, flashcard review in `src/components/flashcard/`
+- Exam components in `src/components/exam/`, study plan in `src/components/study-plan/`
 - Landing page components in `src/components/landing/`
 - Progress/analytics components in `src/components/progress/`
 - All UI text is in German; code (variable names, comments) is in English

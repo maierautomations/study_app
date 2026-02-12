@@ -20,6 +20,8 @@ import {
   RefreshCw,
   Loader2,
   BarChart3,
+  GraduationCap,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -27,6 +29,7 @@ import { CourseFormDialog } from "./course-form-dialog";
 import { DeleteCourseDialog } from "./delete-course-dialog";
 import { DocumentUpload } from "@/components/document/document-upload";
 import { SummaryView } from "@/components/document/summary-view";
+import { GlossaryView } from "@/components/document/glossary-view";
 import { WeaknessChart } from "@/components/progress/weakness-chart";
 import type { Course, Document, Quiz, FlashcardSet } from "@/types/database";
 
@@ -46,6 +49,7 @@ export function CourseDetail({
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [retryingDocId, setRetryingDocId] = useState<string | null>(null);
+  const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -75,6 +79,42 @@ export function CourseDetail({
       toast.error("Verarbeitung fehlgeschlagen");
     } finally {
       setRetryingDocId(null);
+    }
+  }
+
+  async function handleGenerateAll() {
+    const readyDocs = documents.filter((d) => d.status === "ready");
+    if (readyDocs.length === 0) return;
+
+    setIsGeneratingAll(true);
+    try {
+      const res = await fetch("/api/documents/generate-all", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          courseId: course.id,
+          documentIds: readyDocs.map((d) => d.id),
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (res.status === 402) {
+          toast.error("KI-Limit erreicht", { description: data.error });
+        } else {
+          toast.error(data.error || "Generierung fehlgeschlagen");
+        }
+        return;
+      }
+
+      toast.success("Alles generiert!", {
+        description: `${data.generated.questions} Quizfragen, ${data.generated.flashcards} Flashcards und Zusammenfassung erstellt.`,
+      });
+      router.refresh();
+    } catch {
+      toast.error("Generierung fehlgeschlagen");
+    } finally {
+      setIsGeneratingAll(false);
     }
   }
 
@@ -153,6 +193,10 @@ export function CourseDetail({
             <MessageSquare className="h-4 w-4" />
             Chat
           </TabsTrigger>
+          <TabsTrigger value="exam" className="gap-1.5">
+            <GraduationCap className="h-4 w-4" />
+            Klausur
+          </TabsTrigger>
           <TabsTrigger value="progress" className="gap-1.5">
             <BarChart3 className="h-4 w-4" />
             Fortschritt
@@ -161,6 +205,36 @@ export function CourseDetail({
 
         <TabsContent value="documents" className="mt-6 space-y-6">
           <DocumentUpload courseId={course.id} />
+
+          {documents.some((d) => d.status === "ready") && (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="flex items-center justify-between py-3">
+                <div>
+                  <p className="font-medium text-sm">Alles auf einmal generieren</p>
+                  <p className="text-xs text-muted-foreground">
+                    10 Quizfragen + 20 Flashcards + Zusammenfassung in einem Schritt (spart KI-Kontingent)
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={handleGenerateAll}
+                  disabled={isGeneratingAll}
+                >
+                  {isGeneratingAll ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Wird generiert...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="mr-2 h-4 w-4" />
+                      Alles generieren
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           {documents.length > 0 && (
             <div className="space-y-2">
@@ -236,6 +310,24 @@ export function CourseDetail({
                     documentId={doc.id}
                     documentName={doc.name}
                     cachedSummary={(doc as Document & { summary?: string | null }).summary ?? null}
+                  />
+                ))}
+            </div>
+          )}
+
+          {documents.some((d) => d.status === "ready") && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Fachbegriff-Glossar
+              </h3>
+              {documents
+                .filter((d) => d.status === "ready")
+                .map((doc) => (
+                  <GlossaryView
+                    key={doc.id}
+                    documentId={doc.id}
+                    documentName={doc.name}
+                    cachedGlossary={(doc as Document & { glossary?: string | null }).glossary ?? null}
                   />
                 ))}
             </div>
@@ -390,6 +482,34 @@ export function CourseDetail({
                 >
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Chat öffnen
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="exam" className="mt-6">
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <GraduationCap className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">
+                Klausur-Simulator
+              </h3>
+              <p className="text-muted-foreground text-center mb-4 max-w-md">
+                {documents.some((d) => d.status === "ready")
+                  ? "Simuliere eine realistische Probeklausur mit Zeitlimit, Punkteverteilung und deutschem Notensystem."
+                  : "Lade zuerst Dokumente hoch, um den Klausur-Simulator nutzen zu können."}
+              </p>
+              {documents.some((d) => d.status === "ready") && (
+                <Button
+                  onClick={() =>
+                    router.push(
+                      `/dashboard/courses/${course.id}/exam`
+                    )
+                  }
+                >
+                  <GraduationCap className="mr-2 h-4 w-4" />
+                  Probeklausur starten
                 </Button>
               )}
             </CardContent>
