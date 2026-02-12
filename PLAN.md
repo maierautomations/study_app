@@ -378,22 +378,35 @@ study_app/
 - Visueller Balken: grün → gelb → rot
 - In Sidebar und Dashboard
 
-### Phase D: Landing Page + Deployment
+### Phase D: Landing Page + Features
+
+**D5. DSGVO-Compliance** (Pflicht vor Launch)
+- `src/app/datenschutz/page.tsx` — Datenschutzerklärung
+- `src/app/impressum/page.tsx` — Impressum
+- `src/components/cookie-banner.tsx` — Minimaler Cookie-Banner
 
 **D1. Landing Page** (`src/app/page.tsx` — ersetzt Next.js Boilerplate)
-- Navbar: Logo | Features | Login | Registrieren
+- Navbar: Logo | Features | Preise | Login | Registrieren
 - Hero: Titel + Untertitel + CTA + Screenshot/Mockup
 - Features: 3-Spalten (Dokumente, Quizzes, Chat)
 - "So funktioniert's": 4-Schritt visueller Ablauf
-- Spaced Repetition Feature-Highlight
-- Finaler CTA + Footer
+- Pricing: 3 Tiers (Free, Basis, Pro)
+- FAQ + Footer mit Impressum/Datenschutz Links
 - Server Component: Zeigt "Zum Dashboard" für eingeloggte User
 
-**D2. Vercel Deployment**
-- `maxDuration` für API Routes (Process: 60s, Quiz/Flashcard: 30s)
-- `npm run build` muss fehlerfrei durchlaufen
-- Environment Variables in Vercel Dashboard konfigurieren
-- Deployment + Produktions-Test
+**D2. Zusammenfassungen** (Basis + Pro)
+- `src/app/api/documents/summarize/route.ts` — AI-generierte Zusammenfassungen
+- DB-Migration: `ALTER TABLE documents ADD COLUMN summary text;`
+
+**D3. Schwächenanalyse** (rein algorithmisch, 0 API-Kosten)
+- `src/lib/analytics.ts` — Quiz-Fehlerquoten pro Dokument
+- `src/components/progress/weakness-chart.tsx` — Visualisierung
+
+**D6. Quiz-Fragetyp-Auswahl**
+- Checkboxen: MC / Wahr-Falsch / Offene Fragen (vor Quiz-Generierung)
+
+**Vercel Deployment** (separat, nach Phase E)
+- `maxDuration` für API Routes, Environment Variables, Produktions-Test
 
 ---
 

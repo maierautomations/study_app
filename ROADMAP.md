@@ -1,6 +1,6 @@
 # StudyApp — Feature-Roadmap & Pricing-Strategie
 
-> Erstellt: 2026-02-11 | Status: Phase 1-3 + A + B abgeschlossen | Nächste: Phase C
+> Erstellt: 2026-02-11 | Status: Phase 1-3 + A + B + C abgeschlossen | Nächste: Phase D
 
 ---
 
@@ -21,16 +21,17 @@
 | RAG-Chat (Fragen zu Dokumenten) | ✅ 20/mo | ✅ 150/mo | ✅ Unbegrenzt | AI | ✅ |
 | Gamification (XP, Streaks, Achievements) | ✅ | ✅ | ✅ | Algo | ✅ |
 | Onboarding Wizard | ✅ | ✅ | ✅ | — | ✅ |
-| **Phase C** | | | | | |
-| Spaced Repetition (SM-2) | ✅ | ✅ | ✅ | Algo | C |
-| Review-Sessions (fällige Karten) | ✅ | ✅ | ✅ | Algo | C |
-| Achievements-Seite | ✅ | ✅ | ✅ | Algo | C |
-| Freemium Enforcement | ✅ (20/mo) | ✅ (150/mo) | ✅ (∞) | — | C |
+| **Phase C** ✅ | | | | | |
+| Spaced Repetition (SM-2) | ✅ | ✅ | ✅ | Algo | ✅ C |
+| Review-Sessions (fällige Karten) | ✅ | ✅ | ✅ | Algo | ✅ C |
+| Achievements-Seite | ✅ | ✅ | ✅ | Algo | ✅ C |
+| Freemium Enforcement | ✅ (20/mo) | ✅ (150/mo) | ✅ (∞) | — | ✅ C |
 | **Phase D** | | | | | |
 | Landing Page | ✅ | ✅ | ✅ | — | D |
 | Zusammenfassungen pro Dokument | ❌ | ✅ | ✅ | AI | D |
 | Schwächenanalyse (aus Quiz-Ergebnissen) | ✅ Basis | ✅ Detail | ✅ Detail | Algo | D |
 | Lernstatistiken & Fortschritts-Dashboard | ✅ Basis | ✅ Erweitert | ✅ Erweitert | Algo | D |
+| Quiz-Fragetyp-Auswahl (MC/Wahr-Falsch/Offen) | ✅ | ✅ | ✅ | — | D |
 | **Phase E** | | | | | |
 | Klausur-Simulator (Probeklausur + Noten) | ❌ | ✅ | ✅ | AI | E |
 | Multi-Output (Quiz+Flashcards+Summary) | ❌ | ✅ | ✅ | AI | E |
@@ -45,6 +46,9 @@
 | Moodle/ILIAS Import | ❌ | ❌ | ✅ | — | F |
 | PWA / Mobile-Optimierung | ✅ | ✅ | ✅ | — | F |
 | Audio-Zusammenfassungen (TTS) | ❌ | ❌ | ✅ | AI | F |
+| **Phase G** | | | | | |
+| Sprachmemo-Upload + Transkription | ❌ | ✅ | ✅ | AI | G |
+| YouTube-Link Transkription | ❌ | ✅ | ✅ | AI/Free | G |
 
 ### Conversion Trigger (Features die zum Upgrade bewegen)
 
@@ -98,7 +102,7 @@
 
 ## 3. Implementierungsplan (Phasen C–F)
 
-### Phase C: Spaced Repetition + Freemium (Nächste Phase)
+### Phase C: Spaced Repetition + Freemium ✅ (abgeschlossen 2026-02-12)
 
 > **Ziel**: App ist feature-complete für den Kernwert (Lernen + Wiederholen) und monetarisierbar.
 > **Geschätzter Umfang**: ~15 Dateien, mittlere Komplexität
@@ -243,33 +247,38 @@ Algorithmus (0 API-Kosten):
 5. "Quiz nur zu diesem Thema erstellen" Button
 ```
 
-#### D4. Vercel Deployment
-**Dateien**:
-- `next.config.ts` — `maxDuration` für API Routes setzen
-- `vercel.json` (neu, falls nötig) — Region: `fra1` (Frankfurt, DACH-nah)
-- Environment Variables in Vercel Dashboard
-
-```
-API Route Timeouts:
-- /api/documents/process: maxDuration = 60
-- /api/quiz/generate: maxDuration = 30
-- /api/flashcards/generate: maxDuration = 30
-- /api/chat: maxDuration = 30
-- /api/documents/summarize: maxDuration = 30
-```
-
 #### D5. DSGVO-Compliance (Pflicht vor Launch!)
 **Dateien**:
 - `src/app/datenschutz/page.tsx` (neu) — Datenschutzerklärung
 - `src/app/impressum/page.tsx` (neu) — Impressum (gesetzlich vorgeschrieben in DACH)
 - `src/components/cookie-banner.tsx` (neu) — Minimaler Cookie-Banner (Supabase Auth Cookies = technisch notwendig, kein Tracking = einfach)
 
+#### D6. Quiz-Fragetyp-Auswahl (UX-Verbesserung)
+**Dateien**:
+- `src/app/(dashboard)/dashboard/courses/[courseId]/quiz/new/page.tsx` (anpassen) — Checkboxen für Fragetypen
+- `src/app/api/quiz/generate/route.ts` (anpassen) — `questionTypes` Parameter im Prompt
+
+```
+UI: Vor der Quiz-Generierung kann der User auswählen:
+☑ Multiple Choice
+☑ Wahr/Falsch
+☑ Offene Fragen
+
+Default: Alle angehakt
+Min: Mindestens 1 Typ ausgewählt
+Der System-Prompt an die AI wird entsprechend angepasst:
+"Generiere nur Multiple-Choice und Wahr/Falsch Fragen" etc.
+Kein API-Mehraufwand — nur Prompt-Anpassung.
+```
+
 #### D-Reihenfolge
 1. D5 (DSGVO) — Muss vor Launch stehen, klein aber kritisch
 2. D1 (Landing Page) — Hauptarbeit
 3. D2 (Zusammenfassungen) — Schneller AI-Feature-Win
 4. D3 (Schwächenanalyse) — Kein API-Aufwand, hoher Wert
-5. D4 (Deployment) — Finale Schritte
+5. D6 (Quiz-Fragetyp-Auswahl) — Kleine UX-Verbesserung, schnell
+
+> **Hinweis**: D4 (Vercel Deployment) wurde in eine eigene spätere Phase verschoben — siehe nach Phase E.
 
 ---
 
@@ -405,6 +414,26 @@ Anzeige: "Prognostizierte Note: 2,3 (±0,4)" mit Trend-Pfeil
 5. E6 (Export) — Oft nachgefragt, kein AI nötig
 6. E5 (Lernplan) — Pro-Differenzierung
 7. E7 (Notenprognose) — Klein, rein algorithmisch, Cherry on top
+
+---
+
+### Vercel Deployment (nach Phase E, vor Launch)
+
+> **Ziel**: App produktionsreif deployen.
+
+**Dateien**:
+- `next.config.ts` — `maxDuration` für API Routes setzen
+- `vercel.json` (neu, falls nötig) — Region: `fra1` (Frankfurt, DACH-nah)
+- Environment Variables in Vercel Dashboard
+
+```
+API Route Timeouts:
+- /api/documents/process: maxDuration = 60
+- /api/quiz/generate: maxDuration = 30
+- /api/flashcards/generate: maxDuration = 30
+- /api/chat: maxDuration = 30
+- /api/documents/summarize: maxDuration = 30
+```
 
 ---
 
@@ -638,19 +667,14 @@ Noch hinzufügen (Phase D/E):
 
 ## Zusammenfassung: Was als Nächstes tun?
 
-### Sofort (Phase C) — 1-2 Wochen
-1. SM-2 Algorithmus implementieren
-2. Review API + Review-Session Pages bauen
-3. Achievements-Seite erstellen
-4. Freemium Enforcement in alle AI-Routes einbauen
-5. Testen: Review-Flow + Freemium-Block + Achievements
+### ~~Phase C~~ ✅ Abgeschlossen (2026-02-12)
 
-### Danach (Phase D) — 2-3 Wochen
+### Jetzt (Phase D) — 2-3 Wochen
 1. DSGVO-Seiten (Impressum, Datenschutz) — **rechtlich Pflicht**
 2. Landing Page designen und bauen
 3. Zusammenfassungen implementieren (schneller Win)
 4. Schwächenanalyse (kein AI nötig)
-5. Vercel Deployment + Produktions-Test
+5. Quiz-Fragetyp-Auswahl (UX-Verbesserung)
 
 ### Monetarisierung (Phase E) — 3-4 Wochen
 1. Stripe-Integration (Checkout + Webhooks)
@@ -658,11 +682,83 @@ Noch hinzufügen (Phase D/E):
 3. Klausur-Simulator (Killer-Feature)
 4. Glossar + Export + Notenprognose
 
+### Deployment (nach Phase E)
+1. Vercel Deployment + Produktions-Test
+
 ### Wachstum (Phase F) — Ongoing
 1. PWA für Mobile
 2. Gruppenlernen (virales Wachstum)
 3. Mündliche Prüfung Coach
 4. LMS-Integration
+
+### Multi-Input (Phase G) — Zukunft
+
+> **Ziel**: Mehr Input-Formate unterstützen — Studierende sollen nicht nur PDFs, sondern auch Sprachmemos und YouTube-Videos als Lernmaterial verwenden können.
+
+#### G1. Sprachmemo-Upload + Transkription
+**Konzept**: User nimmt Vorlesung auf (Handy) → lädt Sprachmemo hoch → App transkribiert + erstellt strukturierte Zusammenfassung → Material kann für Quiz, Flashcards, Chat genutzt werden.
+
+```
+Technologie:
+- Upload: MP3, M4A, WAV, OGG via Supabase Storage
+- Transkription: OpenAI Whisper API (speech-to-text)
+- Zusammenfassung: GPT-4o-mini strukturiert den transkribierten Text
+- Danach: Standard-Pipeline (Chunking → Embedding → pgvector)
+
+Kosten-Analyse:
+- Whisper API: $0.006/min
+- 45-min Vorlesung: ~$0.27 Transkription + ~$0.001 Summary
+- 90-min Vorlesung: ~$0.54 Transkription + ~$0.002 Summary
+→ Sehr vertretbar, hoher wahrgenommener Wert
+→ Nur für Basis + Pro (wegen Kosten)
+
+Use Cases:
+- Vorlesungsmitschnitt → Zusammenfassung + Quiz
+- Mündliche Notizen → strukturierte Lernkarten
+- Lerngruppen-Gespräch → Protokoll + Flashcards
+
+DB-Änderungen:
+- documents.file_type: 'mp3' | 'mp4a' | 'wav' | 'ogg' hinzufügen
+- Neues Feld: documents.transcription_text (text, nullable)
+- Processing-Pipeline erweitern: Audio → Whisper → Text → Chunking → Embedding
+```
+
+#### G2. YouTube-Link Transkription + Zusammenfassung
+**Konzept**: User gibt YouTube-URL ein → App extrahiert Transkript → erstellt strukturierte Zusammenfassung → Material wird wie ein Dokument behandelt.
+
+```
+Technologie:
+- Transkript-Extraktion: youtube-transcript-api (npm) oder YouTube Data API
+- Fallback: Whisper API wenn keine Captions vorhanden
+- Zusammenfassung: GPT-4o-mini
+- Danach: Standard-Pipeline (Chunking → Embedding → pgvector)
+
+Kosten-Analyse:
+- YouTube Captions: $0 (kostenlos via API)
+- Whisper Fallback: $0.006/min (nur wenn keine Captions)
+- Summary: ~$0.001
+→ Extrem günstig für Videos mit Captions (die meisten Vorlesungsvideos)
+
+Use Cases:
+- YouTube-Vorlesungen (Khan Academy, Uni-Channels) → Quiz + Flashcards
+- Erklärvideos → Zusammenfassung + Chat
+- Playlist ganzer Kurs → alle Videos als Dokumente
+
+DB-Änderungen:
+- documents.file_type: 'youtube' hinzufügen
+- documents.source_url (text, nullable) für YouTube-URL
+- Neues UI: URL-Input statt File-Upload (Tab oder Toggle)
+
+Implementierung:
+1. YouTube-URL parsen → Video-ID extrahieren
+2. Captions abrufen (DE bevorzugt, EN als Fallback, auto-generated OK)
+3. Captions als Text speichern → Standard-Chunking-Pipeline
+4. Bei fehlenden Captions: Audio-Track herunterladen → Whisper
+```
+
+#### G-Reihenfolge
+1. G2 (YouTube) — Einfacher Start, meist kostenloses Captions-API
+2. G1 (Sprachmemo) — Whisper-Integration, komplexerer Upload-Flow
 
 ---
 

@@ -4,7 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-StudyApp is an AI-powered exam preparation web app for German-speaking university students. Users upload their study materials (PDFs, DOCX, TXT), and the app generates quizzes, flashcards, and provides a RAG-based chat that explains content strictly from uploaded documents. The UI is entirely in German.
+StudyApp is an AI-powered exam preparation web app for German-speaking university students. Users upload their study materials (PDFs, DOCX, TXT), and the app generates quizzes, flashcards, and provides a RAG-based chat that explains content strictly from uploaded documents. Features include spaced repetition (SM-2) for flashcard reviews, a gamification system (XP, levels, streaks, achievements), and freemium enforcement (20 AI generations/month free). The UI is entirely in German.
+
+## Current Status
+
+**Phases 1-3, A, B, C are complete. Next: Phase D (Landing Page + Deployment).**
+
+See `ROADMAP.md` for the full feature roadmap and `PLAN.md` for architectural details.
 
 ## Commands
 
@@ -64,8 +70,23 @@ The course detail page (`/dashboard/courses/[courseId]`) uses client-side tabs (
 - DB tables: `achievements` (pre-populated, 12 German achievements), `user_achievements`, `study_sessions`
 - Profile columns: `xp`, `level`, `current_streak`, `longest_streak`, `last_study_date`, `onboarding_completed`
 
-### Freemium Model
-`profiles.ai_generations_used` tracks monthly usage (20/month free tier). Incremented after each AI generation (quiz, flashcard, chat message). Reset tracked via `ai_generations_reset_at`.
+### Spaced Repetition (SM-2)
+- `src/lib/spaced-repetition.ts` — SM-2 algorithm: `calculateSM2(quality, previousInterval, previousEaseFactor)` returns `{ interval, easeFactor, nextReviewDate }`
+- Quality mapping: "Nochmal"=1, "Schwer"=3, "Gut"=4, "Einfach"=5. New cards start with interval=0, easeFactor=2.5
+- `POST /api/flashcards/review` — Records review, runs SM-2, inserts `flashcard_reviews` row
+- `GET /api/flashcards/due?courseId=xxx` — Returns due cards (never reviewed OR `next_review_at <= now`), grouped by course
+- Review pages: `/dashboard/reviews` (overview), `/dashboard/reviews/[courseId]` (interactive session)
+- `src/components/flashcard/review-session.tsx` — Client component: flip card → rate (4 buttons) → SM-2 → next card → session summary with XP. Keyboard: Space/Enter=flip, 1-4=rate. "Nochmal" cards re-queued at end.
+
+### Achievements Page
+- `/dashboard/achievements` — Server component loading all achievements + user unlock status
+- `src/components/gamification/achievements-grid.tsx` — Groups achievements by category (courses, documents, quizzes, flashcards, streaks, levels), shows unlocked (colorful + date) vs locked (gray + description)
+
+### Freemium Enforcement
+- `src/lib/freemium.ts` — `checkFreemiumLimit(userId)` checks `ai_generations_used` vs tier limit (free=20, premium=Infinity), auto-resets after 30 days. Also exports `incrementUsage()` and `getFreemiumErrorMessage()`.
+- Enforced in: `/api/quiz/generate`, `/api/flashcards/generate`, `/api/chat` — returns 402 JSON with German error message when limit exceeded
+- `src/components/freemium/upgrade-prompt.tsx` — `UpgradePrompt` dialog (usage bar, premium benefits) + `UpgradeBanner` (inline, shown at 80%+ usage)
+- `profiles.ai_generations_used` tracks monthly usage. `profiles.ai_generations_reset_at` triggers auto-reset after 30 days.
 
 ## Key Conventions
 
@@ -77,4 +98,10 @@ The course detail page (`/dashboard/courses/[courseId]`) uses client-side tabs (
 - `next.config.ts` has `serverExternalPackages: ["pdf-parse"]` for server-side PDF processing
 - Course components in `src/components/course/`, document components in `src/components/document/`
 - Gamification components in `src/components/gamification/`, onboarding in `src/components/onboarding/`
+- Freemium components in `src/components/freemium/`, flashcard review in `src/components/flashcard/`
 - All UI text is in German; code (variable names, comments) is in English
+
+## Known Issues
+
+- **TypeScript `never` types**: The manually maintained `Database` type in `src/types/database.ts` doesn't include `Relationships` arrays expected by `@supabase/ssr` generics. Workaround: `as never` for `.insert()`/`.update()` arguments, `as unknown as Type` for `.select()` results. Permanent fix: regenerate types with `supabase gen types typescript --project-id <project-id>`. App works correctly at runtime — this is compile-time only.
+- **Hydration mismatch**: Radix UI generates differing IDs server/client — cosmetic only, no functional impact.
