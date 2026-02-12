@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-StudyApp is an AI-powered exam preparation web app for German-speaking university students. Users upload their study materials (PDFs, DOCX, TXT), and the app generates quizzes, flashcards, and provides a RAG-based chat that explains content strictly from uploaded documents. Features include spaced repetition (SM-2) for flashcard reviews, a gamification system (XP, levels, streaks, achievements), and freemium enforcement (20 AI generations/month free). The UI is entirely in German.
+StudyApp is an AI-powered exam preparation web app for German-speaking university students. Users upload their study materials (PDFs, DOCX, TXT), and the app generates quizzes, flashcards, and provides a RAG-based chat that explains content strictly from uploaded documents. Features include spaced repetition (SM-2) for flashcard reviews, a gamification system (XP, levels, streaks, achievements), freemium enforcement (20 AI generations/month free), document summaries, weakness analysis, and a full landing page with DSGVO compliance. The UI is entirely in German.
 
 ## Current Status
 
-**Phases 1-3, A, B, C are complete. Next: Phase D (Landing Page + Deployment).**
+**Phases 1-3, A, B, C, D are complete. Next: Phase E (Premium Features).**
 
 See `ROADMAP.md` for the full feature roadmap and `PLAN.md` for architectural details.
 
@@ -32,13 +32,14 @@ See `ROADMAP.md` for the full feature roadmap and `PLAN.md` for architectural de
 ### Route Groups
 - `src/app/(auth)/` — Public auth pages (login, register). No layout wrapper.
 - `src/app/(dashboard)/` — Authenticated area with sidebar layout. The layout (`layout.tsx`) checks auth via `supabase.auth.getUser()` and redirects unauthenticated users.
-- `src/app/api/` — API routes for document processing, quiz/flashcard generation, and streaming chat.
+- `src/app/api/` — API routes for document processing, quiz/flashcard generation, summaries, and streaming chat.
+- `src/app/impressum/` and `src/app/datenschutz/` — Public legal pages (DSGVO compliance).
 
 ### Supabase Integration
 - **Browser client**: `src/lib/supabase/client.ts` — use in client components
 - **Server client**: `src/lib/supabase/server.ts` — use in Server Components and API routes (async, uses `cookies()`)
 - **Middleware**: `src/middleware.ts` delegates to `src/lib/supabase/middleware.ts` for session refresh and route protection
-- **Database types**: `src/types/database.ts` — manually maintained typed schema matching `supabase/migrations/00001_initial_schema.sql` and `00002_gamification.sql`
+- **Database types**: `src/types/database.ts` — manually maintained typed schema matching `supabase/migrations/00001_initial_schema.sql`, `00002_gamification.sql`, and `00003_document_summary.sql`
 - All tables use **Row Level Security (RLS)** — data is scoped to `auth.uid()`. Child tables (chunks, questions, flashcards) use `exists` subqueries to verify ownership through parent tables.
 - A trigger `handle_new_user()` auto-creates a profile row on signup.
 - Storage bucket `documents` uses folder-based RLS: files stored at `{user_id}/{filename}`.
@@ -46,8 +47,9 @@ See `ROADMAP.md` for the full feature roadmap and `PLAN.md` for architectural de
 ### AI Integration
 - `src/lib/ai/provider.ts` — `getModel()` returns LLM instance, `getEmbeddingModel()` returns embedding model
 - `src/lib/ai/embeddings.ts` — `generateEmbeddings()` batch-embeds text arrays using OpenAI
-- Quiz generation: `POST /api/quiz/generate` uses `generateObject()` with Zod schema for structured quiz output
+- Quiz generation: `POST /api/quiz/generate` uses `generateObject()` with Zod schema for structured quiz output. Accepts `questionTypes` parameter to filter MC/TF/open questions.
 - Flashcard generation: `POST /api/flashcards/generate` uses `generateObject()` for structured flashcard output
+- Document summaries: `POST /api/documents/summarize` uses `generateObject()` for structured summaries (title, keyPoints, keywords, summary). Cached in `documents.summary` column.
 - RAG Chat: `POST /api/chat` uses `streamText()` with embedding-based retrieval + `toUIMessageStreamResponse()`; client uses `useChat` from `@ai-sdk/react` with `DefaultChatTransport`
 - RAG pipeline: embed user query → pgvector similarity search via `match_document_chunks()` SQL function → pass relevant chunks as context to LLM
 - **IMPORTANT (AI SDK 6):** `useChat()` returns `{ messages, sendMessage, status }` — NOT `input`/`handleSubmit`/`isLoading`. Server must return `toUIMessageStreamResponse()` (NOT `toDataStreamResponse` which no longer exists). Client must use `DefaultChatTransport` and manage input state manually with `useState`.
@@ -59,7 +61,12 @@ See `ROADMAP.md` for the full feature roadmap and `PLAN.md` for architectural de
 - `src/lib/documents/chunker.ts` — paragraph-aware text chunking with configurable size/overlap
 
 ### Course Detail Page
-The course detail page (`/dashboard/courses/[courseId]`) uses client-side tabs (shadcn Tabs) for Documents, Quizzes, Flashcards, and Chat sections. Data is fetched server-side and passed to the `CourseDetail` client component.
+The course detail page (`/dashboard/courses/[courseId]`) uses client-side tabs (shadcn Tabs) for Documents (with summaries), Quizzes, Flashcards, Chat, and Fortschritt (progress/weakness analysis) sections. Data is fetched server-side and passed to the `CourseDetail` client component.
+
+### Landing Page
+- `src/app/page.tsx` — Server component, detects auth state (shows "Zum Dashboard" vs "Registrieren")
+- Components in `src/components/landing/`: navbar, hero, features, how-it-works, pricing, faq, footer
+- Links to `/impressum` and `/datenschutz` in footer
 
 ### Gamification System
 - `src/lib/gamification.ts` — XP rewards, level thresholds, streak logic, achievement checking
@@ -84,9 +91,14 @@ The course detail page (`/dashboard/courses/[courseId]`) uses client-side tabs (
 
 ### Freemium Enforcement
 - `src/lib/freemium.ts` — `checkFreemiumLimit(userId)` checks `ai_generations_used` vs tier limit (free=20, premium=Infinity), auto-resets after 30 days. Also exports `incrementUsage()` and `getFreemiumErrorMessage()`.
-- Enforced in: `/api/quiz/generate`, `/api/flashcards/generate`, `/api/chat` — returns 402 JSON with German error message when limit exceeded
+- Enforced in: `/api/quiz/generate`, `/api/flashcards/generate`, `/api/chat`, `/api/documents/summarize` — returns 402 JSON with German error message when limit exceeded
 - `src/components/freemium/upgrade-prompt.tsx` — `UpgradePrompt` dialog (usage bar, premium benefits) + `UpgradeBanner` (inline, shown at 80%+ usage)
 - `profiles.ai_generations_used` tracks monthly usage. `profiles.ai_generations_reset_at` triggers auto-reset after 30 days.
+
+### Analytics & Weakness Analysis
+- `src/lib/analytics.ts` — Pure client-side analysis: `analyzeWeaknesses()` computes error rates per document from quiz attempts, `computeQuizTrend()` tracks score history
+- `src/components/progress/weakness-chart.tsx` — Weakness chart with per-document error rates, quiz score history, overview stats
+- Integrated as "Fortschritt" tab in course detail page
 
 ## Key Conventions
 
@@ -99,6 +111,8 @@ The course detail page (`/dashboard/courses/[courseId]`) uses client-side tabs (
 - Course components in `src/components/course/`, document components in `src/components/document/`
 - Gamification components in `src/components/gamification/`, onboarding in `src/components/onboarding/`
 - Freemium components in `src/components/freemium/`, flashcard review in `src/components/flashcard/`
+- Landing page components in `src/components/landing/`
+- Progress/analytics components in `src/components/progress/`
 - All UI text is in German; code (variable names, comments) is in English
 
 ## Known Issues

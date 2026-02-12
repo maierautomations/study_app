@@ -1,6 +1,6 @@
 # StudyApp — Feature-Roadmap & Pricing-Strategie
 
-> Erstellt: 2026-02-11 | Status: Phase 1-3 + A + B + C abgeschlossen | Nächste: Phase D
+> Erstellt: 2026-02-11 | Status: Phase 1-3 + A + B + C + D abgeschlossen | Nächste: Phase E
 
 ---
 
@@ -26,21 +26,22 @@
 | Review-Sessions (fällige Karten) | ✅ | ✅ | ✅ | Algo | ✅ C |
 | Achievements-Seite | ✅ | ✅ | ✅ | Algo | ✅ C |
 | Freemium Enforcement | ✅ (20/mo) | ✅ (150/mo) | ✅ (∞) | — | ✅ C |
-| **Phase D** | | | | | |
-| Landing Page | ✅ | ✅ | ✅ | — | D |
-| Zusammenfassungen pro Dokument | ❌ | ✅ | ✅ | AI | D |
-| Schwächenanalyse (aus Quiz-Ergebnissen) | ✅ Basis | ✅ Detail | ✅ Detail | Algo | D |
-| Lernstatistiken & Fortschritts-Dashboard | ✅ Basis | ✅ Erweitert | ✅ Erweitert | Algo | D |
-| Quiz-Fragetyp-Auswahl (MC/Wahr-Falsch/Offen) | ✅ | ✅ | ✅ | — | D |
-| **Phase E** | | | | | |
+| **Phase D** ✅ | | | | | |
+| Landing Page | ✅ | ✅ | ✅ | — | ✅ D |
+| Zusammenfassungen pro Dokument | ❌ | ✅ | ✅ | AI | ✅ D |
+| Schwächenanalyse (aus Quiz-Ergebnissen) | ✅ Basis | ✅ Detail | ✅ Detail | Algo | ✅ D |
+| Lernstatistiken & Fortschritts-Dashboard | ✅ Basis | ✅ Erweitert | ✅ Erweitert | Algo | ✅ D |
+| Quiz-Fragetyp-Auswahl (MC/Wahr-Falsch/Offen) | ✅ | ✅ | ✅ | — | ✅ D |
+| **Phase E** (Premium-Features) | | | | | |
 | Klausur-Simulator (Probeklausur + Noten) | ❌ | ✅ | ✅ | AI | E |
 | Multi-Output (Quiz+Flashcards+Summary) | ❌ | ✅ | ✅ | AI | E |
 | Fachbegriff-Glossar (auto-extrahiert) | ❌ | ✅ | ✅ | AI | E |
 | Lernplan-Generator (Prüfungsdatum) | ❌ | ❌ | ✅ | AI | E |
 | Export (PDF: Quizzes/Flashcards/Summary) | ❌ | ✅ PDF | ✅ PDF+Anki | Algo | E |
 | Notenprognose (aus Quiz-Scores) | ❌ | ❌ | ✅ | Algo | E |
-| Stripe-Integration (Zahlungen) | — | ✅ | ✅ | — | E |
-| **Phase F** | | | | | |
+| **Phase F** (Monetarisierung + Deployment + Wachstum) | | | | | |
+| Stripe-Integration (Zahlungen) | — | ✅ | ✅ | — | F |
+| Vercel Deployment | ✅ | ✅ | ✅ | — | F |
 | Mündliche-Prüfung-Coach (Voice) | ❌ | ❌ | ✅ | AI | F |
 | Gruppenlernen (geteilte Kurse) | ❌ | ✅ (2 Pers.) | ✅ (10 Pers.) | — | F |
 | Moodle/ILIAS Import | ❌ | ❌ | ✅ | — | F |
@@ -193,122 +194,42 @@ async function checkFreemiumLimit(userId: string): Promise<{
 
 ---
 
-### Phase D: Launch-Ready (Landing Page + Kernverbesserungen)
+### Phase D: Launch-Ready (Landing Page + Kernverbesserungen) ✅ (abgeschlossen 2026-02-12)
 
 > **Ziel**: App ist öffentlich launchbar mit überzeugender Landing Page und den wichtigsten "Wow"-Features.
-> **Geschätzter Umfang**: ~12 Dateien
 
-#### D1. Landing Page
-**Datei**: `src/app/page.tsx` (überschreiben — aktuell Next.js Boilerplate)
+#### D5. DSGVO-Compliance ✅
+- `src/app/datenschutz/page.tsx` — Datenschutzerklärung (DSGVO-konform, Art. 6/13/14)
+- `src/app/impressum/page.tsx` — Impressum (§5 TMG)
+- `src/components/cookie-banner.tsx` — Cookie-Banner (localStorage-basiert, nur technische Cookies)
 
-```
-Struktur:
-- Navbar: Logo | Features | Preise | Login | Kostenlos starten
-- Hero Section: "Bestehe jede Prüfung — mit KI" + Untertitel + CTA + App-Screenshot
-- Pain Point: "Stundenlang Karteikarten schreiben? Das war gestern."
-- Feature Grid (3 Spalten): Dokumente → Quiz → Chat
-- "So funktioniert's" (4 Schritte): Hochladen → Generieren → Lernen → Bestehen
-- Social Proof: "Für Studierende im DACH-Raum" + Uni-Logos (wenn verfügbar)
-- Pricing Section: 3 Tiers mit CTA
-- FAQ: 5-6 häufige Fragen
-- Footer: Links, Impressum, Datenschutz (DSGVO-Pflicht!)
-```
+#### D1. Landing Page ✅
+- `src/app/page.tsx` — Server Component, auth-aware (zeigt "Zum Dashboard" für eingeloggte User)
+- Komponenten: `src/components/landing/` (navbar, hero, features, how-it-works, pricing, faq, footer)
+- 6-Feature-Grid, 4-Schritt "So funktioniert's", 3 Pricing-Tiers, 6 FAQ-Items
 
-**Zusätzliche Dateien**:
-- `src/components/landing/hero.tsx`
-- `src/components/landing/features.tsx`
-- `src/components/landing/pricing.tsx`
-- `src/components/landing/faq.tsx`
+#### D2. Zusammenfassungen ✅
+- `src/app/api/documents/summarize/route.ts` — `generateObject()` mit Caching in `documents.summary`
+- `src/components/document/summary-view.tsx` — Strukturierte Anzeige (Kernaussagen, Schlüsselbegriffe)
+- `supabase/migrations/00003_document_summary.sql` — `ALTER TABLE documents ADD COLUMN summary text;`
 
-#### D2. Zusammenfassungen (Basis + Pro)
-**Dateien**:
-- `src/app/api/documents/summarize/route.ts` (neu) — POST: Dokument-Chunks → `generateObject()` → strukturierte Zusammenfassung (Kernaussagen, Schlüsselbegriffe, 300 Wörter)
-- `src/components/document/summary-view.tsx` (neu) — Zusammenfassung anzeigen, gespeichert in `documents.content_text` Feld oder neue Spalte `summary`
-- DB-Migration: `ALTER TABLE documents ADD COLUMN summary text;`
+#### D3. Schwächenanalyse ✅
+- `src/lib/analytics.ts` — `analyzeWeaknesses()`, `computeQuizTrend()` (rein algorithmisch, 0 API-Kosten)
+- `src/components/progress/weakness-chart.tsx` — Fehlerquoten pro Dokument, Quiz-Score-Verlauf
+- Integriert als "Fortschritt"-Tab in Kurs-Detailseite
 
-```
-Kosten pro Zusammenfassung: ~$0.0004 (2k Input, 400 Output @ GPT-4o-mini)
-→ Extrem günstig, hoher wahrgenommener Wert
-→ Caching: Einmal generiert, immer verfügbar
-```
-
-#### D3. Schwächenanalyse (Client-seitig)
-**Dateien**:
-- `src/lib/analytics.ts` (neu) — Algorithmus: Quiz-Attempts analysieren, Fragen nach Thema/Dokument gruppieren, Fehlerquoten berechnen
-- `src/components/progress/weakness-chart.tsx` (neu) — Visualisierung: Balkendiagramm der schwächsten Themen, Empfehlung ("Wiederhole Kapitel 3: Lineare Abbildungen")
-- `src/app/(dashboard)/dashboard/courses/[courseId]/progress/page.tsx` (existiert laut Plan) — Anpassen
-
-```
-Algorithmus (0 API-Kosten):
-1. Alle quiz_attempts für den Kurs laden
-2. Fragen nach source document_id gruppieren
-3. Fehlerquote pro Dokument berechnen
-4. Top-3 Schwachstellen anzeigen
-5. "Quiz nur zu diesem Thema erstellen" Button
-```
-
-#### D5. DSGVO-Compliance (Pflicht vor Launch!)
-**Dateien**:
-- `src/app/datenschutz/page.tsx` (neu) — Datenschutzerklärung
-- `src/app/impressum/page.tsx` (neu) — Impressum (gesetzlich vorgeschrieben in DACH)
-- `src/components/cookie-banner.tsx` (neu) — Minimaler Cookie-Banner (Supabase Auth Cookies = technisch notwendig, kein Tracking = einfach)
-
-#### D6. Quiz-Fragetyp-Auswahl (UX-Verbesserung)
-**Dateien**:
-- `src/app/(dashboard)/dashboard/courses/[courseId]/quiz/new/page.tsx` (anpassen) — Checkboxen für Fragetypen
-- `src/app/api/quiz/generate/route.ts` (anpassen) — `questionTypes` Parameter im Prompt
-
-```
-UI: Vor der Quiz-Generierung kann der User auswählen:
-☑ Multiple Choice
-☑ Wahr/Falsch
-☑ Offene Fragen
-
-Default: Alle angehakt
-Min: Mindestens 1 Typ ausgewählt
-Der System-Prompt an die AI wird entsprechend angepasst:
-"Generiere nur Multiple-Choice und Wahr/Falsch Fragen" etc.
-Kein API-Mehraufwand — nur Prompt-Anpassung.
-```
-
-#### D-Reihenfolge
-1. D5 (DSGVO) — Muss vor Launch stehen, klein aber kritisch
-2. D1 (Landing Page) — Hauptarbeit
-3. D2 (Zusammenfassungen) — Schneller AI-Feature-Win
-4. D3 (Schwächenanalyse) — Kein API-Aufwand, hoher Wert
-5. D6 (Quiz-Fragetyp-Auswahl) — Kleine UX-Verbesserung, schnell
-
-> **Hinweis**: D4 (Vercel Deployment) wurde in eine eigene spätere Phase verschoben — siehe nach Phase E.
+#### D6. Quiz-Fragetyp-Auswahl ✅
+- Checkboxen in `quiz/new/page.tsx`: MC / Wahr-Falsch / Offene Fragen (min. 1 ausgewählt)
+- `getQuestionTypesPrompt()` in `quiz/generate/route.ts`
 
 ---
 
-### Phase E: Monetarisierung + Premium-Features
+### Phase E: Premium-Features
 
-> **Ziel**: Revenue generieren, Premium-Features die den Upgrade-Preis rechtfertigen.
-> **Geschätzter Umfang**: ~20 Dateien
+> **Ziel**: Premium-Features die den Upgrade-Preis rechtfertigen und die App klar von Wettbewerbern differenzieren.
+> **Geschätzter Umfang**: ~15 Dateien
 
-#### E1. Stripe-Integration
-**Dateien**:
-- `src/lib/stripe.ts` (neu) — Stripe Client, Checkout Session erstellen, Webhook Handler
-- `src/app/api/stripe/checkout/route.ts` (neu) — POST: Checkout Session für Basis/Pro
-- `src/app/api/stripe/webhook/route.ts` (neu) — POST: Stripe Webhook → `profiles.tier` updaten
-- `src/app/(dashboard)/dashboard/settings/page.tsx` (anpassen) — Abo-Verwaltung, aktueller Plan, Upgrade/Downgrade
-- `src/components/pricing/checkout-button.tsx` (neu)
-
-```
-Stripe Products (zu erstellen):
-- studyapp_basis_monthly: €9,99/mo
-- studyapp_basis_yearly: €89,88/yr (€7,49/mo)
-- studyapp_pro_monthly: €19,99/mo
-- studyapp_pro_yearly: €179,88/yr (€14,99/mo)
-
-Webhook Events:
-- checkout.session.completed → tier = 'basis' oder 'pro'
-- customer.subscription.deleted → tier = 'free'
-- invoice.payment_failed → E-Mail-Warnung
-```
-
-#### E2. Klausur-Simulator
+#### E1. Klausur-Simulator
 **Dateien**:
 - `src/app/api/exam/generate/route.ts` (neu) — POST: Generiert Probeklausur (gewichtete Frageauswahl nach Schwäche, Zeitlimit, Punkteverteilung)
 - `src/app/(dashboard)/dashboard/courses/[courseId]/exam/page.tsx` (neu) — Klausur-UI
@@ -336,7 +257,7 @@ Features:
 - Historische Klausur-Ergebnisse vergleichen
 ```
 
-#### E3. Multi-Output Generation (75% Token-Ersparnis)
+#### E2. Multi-Output Generation (75% Token-Ersparnis)
 **Datei**: `src/app/api/documents/generate-all/route.ts` (neu)
 
 ```
@@ -354,7 +275,7 @@ Trigger: "Alles generieren" Button auf Kurs-Detailseite
 Nur für Basis + Pro User.
 ```
 
-#### E4. Fachbegriff-Glossar
+#### E3. Fachbegriff-Glossar
 **Dateien**:
 - `src/app/api/documents/glossary/route.ts` (neu) — POST: Extrahiert Fachbegriffe + Definitionen aus Chunks
 - `src/components/document/glossary-view.tsx` (neu) — Alphabetisch sortiert, durchsuchbar, verlinkt zu Quell-Chunks
@@ -366,7 +287,7 @@ Hoher wahrgenommener Wert für Studierende!
 Bonus: Glossar-Begriffe als Flashcards exportieren (0 Extra-Kosten)
 ```
 
-#### E5. Lernplan-Generator (Pro only)
+#### E4. Lernplan-Generator (Pro only)
 **Dateien**:
 - `src/app/api/study-plan/generate/route.ts` (neu) — POST: Prüfungsdatum + Stoffmenge + bisherige Scores → AI generiert Tagesplan
 - `src/components/study-plan/plan-view.tsx` (neu) — Kalender-Ansicht, tägliche Aufgaben, Fortschrittsbalken
@@ -379,7 +300,7 @@ Kosten: ~$0.001 pro Plan (einmalig, sehr günstig)
 Update: Automatisch anpassen wenn Quiz-Scores sich ändern
 ```
 
-#### E6. Export-Funktionen
+#### E5. Export-Funktionen
 **Dateien**:
 - `src/lib/export/pdf-generator.ts` (neu) — Quiz/Flashcards/Summary als PDF
 - `src/lib/export/anki-export.ts` (neu, Pro only) — Flashcards als Anki-kompatible `.apkg` Datei
@@ -393,7 +314,7 @@ Bibliothek: pdfkit oder @react-pdf/renderer (server-side)
 Kein AI nötig — rein algorithmisch!
 ```
 
-#### E7. Notenprognose (Pro only)
+#### E6. Notenprognose (Pro only)
 **Datei**: `src/lib/analytics.ts` (erweitern) — Rein algorithmisch
 
 ```
@@ -407,19 +328,42 @@ Anzeige: "Prognostizierte Note: 2,3 (±0,4)" mit Trend-Pfeil
 ```
 
 #### E-Reihenfolge
-1. E1 (Stripe) — Monetarisierung aktivieren, höchste Priorität
-2. E3 (Multi-Output) — Kostenoptimierung, sofort spürbar
-3. E2 (Klausur-Simulator) — Killer-Feature, stärkster Conversion Trigger
-4. E4 (Glossar) — Günstig, schnell, hoher Wert
-5. E6 (Export) — Oft nachgefragt, kein AI nötig
-6. E5 (Lernplan) — Pro-Differenzierung
-7. E7 (Notenprognose) — Klein, rein algorithmisch, Cherry on top
+1. E1 (Klausur-Simulator) — Killer-Feature, stärkster Conversion Trigger
+2. E2 (Multi-Output) — Kostenoptimierung, sofort spürbar
+3. E3 (Glossar) — Günstig, schnell, hoher Wert
+4. E5 (Export) — Oft nachgefragt, kein AI nötig
+5. E4 (Lernplan) — Pro-Differenzierung
+6. E6 (Notenprognose) — Klein, rein algorithmisch, Cherry on top
 
 ---
 
-### Vercel Deployment (nach Phase E, vor Launch)
+### Phase F: Monetarisierung + Deployment + Wachstum
 
-> **Ziel**: App produktionsreif deployen.
+> **Ziel**: Revenue generieren, App produktionsreif deployen, und Features die StudyApp von Quizlet/Knowt/Anki klar abgrenzen.
+> **Geschätzter Umfang**: Größer, kann über mehrere Monate verteilt werden
+
+#### F0. Stripe-Integration
+**Dateien**:
+- `src/lib/stripe.ts` (neu) — Stripe Client, Checkout Session erstellen, Webhook Handler
+- `src/app/api/stripe/checkout/route.ts` (neu) — POST: Checkout Session für Basis/Pro
+- `src/app/api/stripe/webhook/route.ts` (neu) — POST: Stripe Webhook → `profiles.tier` updaten
+- `src/app/(dashboard)/dashboard/settings/page.tsx` (anpassen) — Abo-Verwaltung, aktueller Plan, Upgrade/Downgrade
+- `src/components/pricing/checkout-button.tsx` (neu)
+
+```
+Stripe Products (zu erstellen):
+- studyapp_basis_monthly: €9,99/mo
+- studyapp_basis_yearly: €89,88/yr (€7,49/mo)
+- studyapp_pro_monthly: €19,99/mo
+- studyapp_pro_yearly: €179,88/yr (€14,99/mo)
+
+Webhook Events:
+- checkout.session.completed → tier = 'basis' oder 'pro'
+- customer.subscription.deleted → tier = 'free'
+- invoice.payment_failed → E-Mail-Warnung
+```
+
+#### F0b. Vercel Deployment
 
 **Dateien**:
 - `next.config.ts` — `maxDuration` für API Routes setzen
@@ -434,13 +378,6 @@ API Route Timeouts:
 - /api/chat: maxDuration = 30
 - /api/documents/summarize: maxDuration = 30
 ```
-
----
-
-### Phase F: Wachstum + Differenzierung
-
-> **Ziel**: Features die StudyApp von Quizlet/Knowt/Anki klar abgrenzen und virales Wachstum ermöglichen.
-> **Geschätzter Umfang**: Größer, kann über mehrere Monate verteilt werden
 
 #### F1. Mündliche-Prüfung-Coach (Pro only)
 **Konzept**: Voice-basierte Übungsgespräche mit AI-Prüfer
@@ -669,27 +606,23 @@ Noch hinzufügen (Phase D/E):
 
 ### ~~Phase C~~ ✅ Abgeschlossen (2026-02-12)
 
-### Jetzt (Phase D) — 2-3 Wochen
-1. DSGVO-Seiten (Impressum, Datenschutz) — **rechtlich Pflicht**
-2. Landing Page designen und bauen
-3. Zusammenfassungen implementieren (schneller Win)
-4. Schwächenanalyse (kein AI nötig)
-5. Quiz-Fragetyp-Auswahl (UX-Verbesserung)
+### ~~Phase D~~ ✅ Abgeschlossen (2026-02-12)
 
-### Monetarisierung (Phase E) — 3-4 Wochen
-1. Stripe-Integration (Checkout + Webhooks)
+### Jetzt (Phase E) — Premium-Features — 3-4 Wochen
+1. Klausur-Simulator (Killer-Feature, stärkster Conversion Trigger)
 2. Multi-Output Generation (Kostenoptimierung)
-3. Klausur-Simulator (Killer-Feature)
-4. Glossar + Export + Notenprognose
+3. Fachbegriff-Glossar (günstig, schnell, hoher Wert)
+4. Export (PDF/Anki)
+5. Lernplan-Generator (Pro-Differenzierung)
+6. Notenprognose (algorithmisch)
 
-### Deployment (nach Phase E)
-1. Vercel Deployment + Produktions-Test
-
-### Wachstum (Phase F) — Ongoing
-1. PWA für Mobile
-2. Gruppenlernen (virales Wachstum)
-3. Mündliche Prüfung Coach
-4. LMS-Integration
+### Monetarisierung + Deployment + Wachstum (Phase F) — 3-4 Wochen
+1. Stripe-Integration (Checkout + Webhooks)
+2. Vercel Deployment + Produktions-Test
+3. PWA für Mobile
+4. Gruppenlernen (virales Wachstum)
+5. Mündliche Prüfung Coach
+6. LMS-Integration
 
 ### Multi-Input (Phase G) — Zukunft
 

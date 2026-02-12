@@ -350,69 +350,62 @@ study_app/
 - ✅ **B11.** shadcn-Komponenten installiert (alert, scroll-area, collapsible)
 - ✅ **B12.** Gamification-Tracking integriert in Quiz, Chat, Upload, Kurs-Erstellung
 
-### Phase C: Spaced Repetition, Fortschritt, Freemium
+### Phase C: Spaced Repetition, Fortschritt, Freemium ✅
 
-**C1. SM-2 Algorithmus** (`src/lib/spaced-repetition/sm2.ts`)
-- SuperMemo SM-2: quality(0-5) + bisherige Werte → neue Intervalle + nächstes Review-Datum
-- Hinweis: `flashcard_reviews` Tabelle existiert bereits im Schema mit SM-2 Feldern
+**C1. SM-2 Algorithmus** ✅
+- `src/lib/spaced-repetition.ts` — SuperMemo SM-2, Quality-Mapping (Nochmal=1, Schwer=3, Gut=4, Einfach=5)
 
-**C2. Review API Routes**
-- `POST /api/flashcards/review` — Review aufzeichnen, SM-2 ausführen
-- `GET /api/flashcards/due` — Fällige Flashcards abrufen (next_review_at ≤ now + noch nie reviewte)
+**C2. Review API Routes** ✅
+- `POST /api/flashcards/review` — Review aufzeichnen + SM-2 berechnen
+- `GET /api/flashcards/due` — Fällige Flashcards abrufen
 
-**C3. Review Session Pages**
+**C3. Review Session Pages** ✅
 - `/dashboard/reviews` — Übersicht: Fällige Karten nach Kurs gruppiert
-- `/dashboard/reviews/[courseId]` — Interaktive Session: Karte flippen → Bewerten (Nochmal/Schwer/Gut/Einfach) → SM-2 → Nächste Karte → Zusammenfassung
+- `/dashboard/reviews/[courseId]` — Interaktive Review-Session mit Flip + Bewertung
 
-**C4. Achievements Page** (`/dashboard/achievements`)
-- Grid aller Achievements: Freigeschaltet (farbig + Datum) / Gesperrt (grau + Beschreibung)
-- Nach Kategorie gruppiert, Gesamt-XP Anzeige
+**C4. Achievements Page** ✅
+- `/dashboard/achievements` — Grid aller Achievements nach Kategorie
 
-**C5. Freemium Enforcement**
-- `src/lib/freemium.ts` — Wiederverwendbare `checkFreemiumLimit()` Funktion
-- Limit-Check vor AI-Calls in: Quiz-Generate, Flashcard-Generate, Chat
-- 429 Response mit deutscher Fehlermeldung bei Limit (20/Monat)
-- Monatlicher Reset-Mechanismus
+**C5. Freemium Enforcement** ✅
+- `src/lib/freemium.ts` — `checkFreemiumLimit()`, 402 Response bei Limit (20/Monat Free)
+- Limit-Check in Quiz-Generate, Flashcard-Generate, Chat
 
-**C6. Nutzungszähler-Komponente** (`src/components/gamification/usage-meter.tsx`)
-- Visueller Balken: grün → gelb → rot
-- In Sidebar und Dashboard
+**C6. Nutzungszähler-Komponente** ✅
+- `src/components/gamification/usage-meter.tsx` — Visueller Balken in Sidebar
 
-### Phase D: Landing Page + Features
+### Phase D: Landing Page + Features ✅
 
-**D5. DSGVO-Compliance** (Pflicht vor Launch)
-- `src/app/datenschutz/page.tsx` — Datenschutzerklärung
-- `src/app/impressum/page.tsx` — Impressum
-- `src/components/cookie-banner.tsx` — Minimaler Cookie-Banner
+**D5. DSGVO-Compliance** ✅
+- `src/app/datenschutz/page.tsx` — Datenschutzerklärung (DSGVO-konform)
+- `src/app/impressum/page.tsx` — Impressum (§5 TMG)
+- `src/components/cookie-banner.tsx` — Cookie-Banner (nur technische Cookies)
 
-**D1. Landing Page** (`src/app/page.tsx` — ersetzt Next.js Boilerplate)
-- Navbar: Logo | Features | Preise | Login | Registrieren
-- Hero: Titel + Untertitel + CTA + Screenshot/Mockup
-- Features: 3-Spalten (Dokumente, Quizzes, Chat)
-- "So funktioniert's": 4-Schritt visueller Ablauf
-- Pricing: 3 Tiers (Free, Basis, Pro)
-- FAQ + Footer mit Impressum/Datenschutz Links
-- Server Component: Zeigt "Zum Dashboard" für eingeloggte User
+**D1. Landing Page** ✅ (`src/app/page.tsx` — Server Component)
+- Navbar, Hero, Features (6-Grid), How-It-Works (4 Schritte), Pricing (3 Tiers), FAQ (6 Items), Footer
+- Auth-aware: Zeigt "Zum Dashboard" für eingeloggte User
+- Komponenten in `src/components/landing/`
 
-**D2. Zusammenfassungen** (Basis + Pro)
-- `src/app/api/documents/summarize/route.ts` — AI-generierte Zusammenfassungen
-- DB-Migration: `ALTER TABLE documents ADD COLUMN summary text;`
+**D2. Zusammenfassungen** ✅
+- `src/app/api/documents/summarize/route.ts` — AI-generierte Zusammenfassungen mit Caching
+- `src/components/document/summary-view.tsx` — Strukturierte Anzeige (Kernaussagen, Schlüsselbegriffe)
+- DB-Migration: `supabase/migrations/00003_document_summary.sql`
 
-**D3. Schwächenanalyse** (rein algorithmisch, 0 API-Kosten)
-- `src/lib/analytics.ts` — Quiz-Fehlerquoten pro Dokument
-- `src/components/progress/weakness-chart.tsx` — Visualisierung
+**D3. Schwächenanalyse** ✅ (rein algorithmisch, 0 API-Kosten)
+- `src/lib/analytics.ts` — `analyzeWeaknesses()`, `computeQuizTrend()`
+- `src/components/progress/weakness-chart.tsx` — Fehlerquoten pro Dokument, Quiz-Verlauf
+- Integriert als "Fortschritt"-Tab in Kurs-Detailseite
 
-**D6. Quiz-Fragetyp-Auswahl**
-- Checkboxen: MC / Wahr-Falsch / Offene Fragen (vor Quiz-Generierung)
-
-**Vercel Deployment** (separat, nach Phase E)
-- `maxDuration` für API Routes, Environment Variables, Produktions-Test
+**D6. Quiz-Fragetyp-Auswahl** ✅
+- Checkboxen: MC / Wahr-Falsch / Offene Fragen (min. 1 ausgewählt)
+- `getQuestionTypesPrompt()` in Quiz-Generate API
 
 ---
 
 ## Verifikation pro Phase
 
-1. **Phase A:** Dokument hochladen → verarbeitet zu "ready" → Quiz/Flashcard/Chat funktionieren
-2. **Phase B:** Neuer User sieht Onboarding → Dashboard zeigt XP/Streaks/Aktivität → Gamification funktioniert
-3. **Phase C:** Review Session: Karten flippen + bewerten → SM-2 plant nächstes Review → Freemium blockiert bei Limit
-4. **Phase D:** Landing Page rendert → `npm run build` sauber → Vercel Deployment funktioniert
+1. **Phase A:** ✅ Dokument hochladen → verarbeitet zu "ready" → Quiz/Flashcard/Chat funktionieren
+2. **Phase B:** ✅ Neuer User sieht Onboarding → Dashboard zeigt XP/Streaks/Aktivität → Gamification funktioniert
+3. **Phase C:** ✅ Review Session: Karten flippen + bewerten → SM-2 plant nächstes Review → Freemium blockiert bei Limit
+4. **Phase D:** ✅ Landing Page rendert → `npm run build` sauber → DSGVO-Seiten vorhanden → Zusammenfassungen + Schwächenanalyse funktionieren
+5. **Phase E:** Klausur-Simulator + Premium-Features funktionieren
+6. **Phase F:** Stripe-Zahlung funktioniert → Vercel Deployment läuft → App produktionsreif
