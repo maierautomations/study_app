@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { extractText } from "@/lib/documents/parser";
 import { chunkText } from "@/lib/documents/chunker";
 import { generateEmbeddings } from "@/lib/ai/embeddings";
+import type { Document } from "@/types/database";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -38,11 +39,12 @@ export async function POST(request: NextRequest) {
   }
 
   // Get all documents that need processing
-  const { data: documents } = await supabase
+  const { data: documentsRaw } = await supabase
     .from("documents")
     .select("*")
     .eq("course_id", courseId)
     .eq("status", "uploading");
+  const documents = documentsRaw as unknown as Document[] | null;
 
   if (!documents || documents.length === 0) {
     return NextResponse.json({ processed: 0 });
@@ -55,7 +57,7 @@ export async function POST(request: NextRequest) {
       // Update status to processing
       await supabase
         .from("documents")
-        .update({ status: "processing" })
+        .update({ status: "processing" } as never)
         .eq("id", doc.id);
 
       // Download file from storage
@@ -82,7 +84,7 @@ export async function POST(request: NextRequest) {
       // Update document with extracted text
       await supabase
         .from("documents")
-        .update({ content_text: text })
+        .update({ content_text: text } as never)
         .eq("id", doc.id);
 
       // Chunk text
@@ -107,7 +109,7 @@ export async function POST(request: NextRequest) {
 
       const { error: insertError } = await supabase
         .from("document_chunks")
-        .insert(chunkRows);
+        .insert(chunkRows as never);
 
       if (insertError) {
         throw new Error(`Chunks speichern fehlgeschlagen: ${insertError.message}`);
@@ -116,7 +118,7 @@ export async function POST(request: NextRequest) {
       // Update status to ready
       await supabase
         .from("documents")
-        .update({ status: "ready" })
+        .update({ status: "ready" } as never)
         .eq("id", doc.id);
 
       processedCount++;
@@ -127,7 +129,7 @@ export async function POST(request: NextRequest) {
       // Update status to error
       await supabase
         .from("documents")
-        .update({ status: "error" })
+        .update({ status: "error" } as never)
         .eq("id", doc.id);
     }
   }

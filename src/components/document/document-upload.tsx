@@ -150,7 +150,7 @@ export function DocumentUpload({ courseId }: DocumentUploadProps) {
           file_type: fileType,
           file_size: file.size,
           status: "uploading",
-        });
+        } as never);
 
         if (dbError) throw dbError;
 

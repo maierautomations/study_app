@@ -47,7 +47,7 @@ export default function QuizPlayPage() {
 
   useEffect(() => {
     async function fetchQuiz() {
-      const [{ data: quizData }, { data: questionsData }] = await Promise.all([
+      const [{ data: quizDataRaw }, { data: questionsDataRaw }] = await Promise.all([
         supabase.from("quizzes").select("*").eq("id", quizId).single(),
         supabase
           .from("quiz_questions")
@@ -55,6 +55,8 @@ export default function QuizPlayPage() {
           .eq("quiz_id", quizId)
           .order("order_index", { ascending: true }),
       ]);
+      const quizData = quizDataRaw as unknown as Quiz | null;
+      const questionsData = questionsDataRaw as unknown as QuizQuestion[] | null;
 
       if (quizData) setQuiz(quizData);
       if (questionsData) setQuestions(questionsData);
@@ -141,7 +143,7 @@ export default function QuizPlayPage() {
         })),
         score,
         completed_at: new Date().toISOString(),
-      });
+      } as never);
     }
 
     // Track gamification

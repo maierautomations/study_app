@@ -33,7 +33,7 @@ export default function FlashcardLearnPage() {
 
   useEffect(() => {
     async function fetchCards() {
-      const [{ data: setData }, { data: cardsData }] = await Promise.all([
+      const [{ data: setDataRaw }, { data: cardsDataRaw }] = await Promise.all([
         supabase.from("flashcard_sets").select("*").eq("id", setId).single(),
         supabase
           .from("flashcards")
@@ -41,6 +41,8 @@ export default function FlashcardLearnPage() {
           .eq("set_id", setId)
           .order("order_index", { ascending: true }),
       ]);
+      const setData = setDataRaw as unknown as FlashcardSet | null;
+      const cardsData = cardsDataRaw as unknown as Flashcard[] | null;
 
       if (setData) setSet(setData);
       if (cardsData) setCards(cardsData);

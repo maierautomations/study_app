@@ -83,7 +83,7 @@ export function CourseFormDialog({
           name: name.trim(),
           description: description.trim() || null,
           color,
-        })
+        } as never)
         .eq("id", course.id);
 
       if (error) {
@@ -109,7 +109,7 @@ export function CourseFormDialog({
         name: name.trim(),
         description: description.trim() || null,
         color,
-      });
+      } as never);
 
       if (error) {
         toast.error("Fehler beim Erstellen", { description: error.message });

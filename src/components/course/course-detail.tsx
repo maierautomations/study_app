@@ -51,7 +51,7 @@ export function CourseDetail({
     try {
       await supabase
         .from("documents")
-        .update({ status: "uploading" })
+        .update({ status: "uploading" } as never)
         .eq("id", docId);
 
       const res = await fetch("/api/documents/process", {

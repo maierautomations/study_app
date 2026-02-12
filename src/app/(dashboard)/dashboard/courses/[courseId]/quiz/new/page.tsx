@@ -40,14 +40,14 @@ export default function NewQuizPage() {
 
   useEffect(() => {
     async function fetchDocuments() {
-      const { data } = await supabase
+      const { data: dataRaw } = await supabase
         .from("documents")
         .select("*")
         .eq("course_id", courseId)
         .eq("status", "ready")
         .order("created_at", { ascending: false });
 
-      setDocuments(data ?? []);
+      setDocuments((dataRaw as unknown as Document[] | null) ?? []);
       setLoadingDocs(false);
     }
     fetchDocuments();

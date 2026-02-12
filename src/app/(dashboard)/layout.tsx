@@ -17,11 +17,19 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
+  const { data: profileData } = await supabase
     .from("profiles")
     .select("display_name, xp, level, current_streak, ai_generations_used, tier")
     .eq("id", user.id)
     .single();
+  const profile = profileData as unknown as {
+    display_name: string | null;
+    xp: number;
+    level: number;
+    current_streak: number;
+    ai_generations_used: number;
+    tier: "free" | "premium";
+  } | null;
 
   return (
     <SidebarProvider>

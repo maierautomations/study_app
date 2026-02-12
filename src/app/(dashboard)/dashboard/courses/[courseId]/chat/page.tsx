@@ -32,12 +32,13 @@ export default function ChatPage() {
 
   useEffect(() => {
     async function loadHistory() {
-      const { data } = await supabase
+      const { data: dataRaw } = await supabase
         .from("chat_messages")
         .select("*")
         .eq("course_id", courseId)
         .order("created_at", { ascending: true })
         .limit(50);
+      const data = dataRaw as unknown as ChatMessage[] | null;
 
       if (data && data.length > 0) {
         setInitialMessages(

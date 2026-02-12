@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getModel } from "@/lib/ai/provider";
 import { generateObject } from "ai";
 import { z } from "zod";
+import { checkFreemiumLimit, incrementUsage, getFreemiumErrorMessage } from "@/lib/freemium";
 
 const FlashcardOutputSchema = z.object({
   flashcards: z.array(
@@ -23,6 +24,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   }
 
+  // Freemium limit check
+  const freemium = await checkFreemiumLimit(user.id);
+  if (!freemium.allowed) {
+    return NextResponse.json(
+      { error: getFreemiumErrorMessage(freemium.used, freemium.limit) },
+      { status: 402 }
+    );
+  }
+
   const { courseId, documentIds, title, count } = await request.json();
 
   if (!courseId || !documentIds?.length) {
@@ -33,12 +43,13 @@ export async function POST(request: NextRequest) {
   }
 
   // Verify course ownership
-  const { data: course } = await supabase
+  const { data: courseRaw } = await supabase
     .from("courses")
     .select("id, name")
     .eq("id", courseId)
     .eq("user_id", user.id)
     .single();
+  const course = courseRaw as unknown as { id: string; name: string } | null;
 
   if (!course) {
     return NextResponse.json(
@@ -48,11 +59,12 @@ export async function POST(request: NextRequest) {
   }
 
   // Get document chunks
-  const { data: chunks } = await supabase
+  const { data: chunksRaw } = await supabase
     .from("document_chunks")
     .select("content")
     .in("document_id", documentIds)
     .order("chunk_index", { ascending: true });
+  const chunks = chunksRaw as unknown as Array<{ content: string }> | null;
 
   if (!chunks || chunks.length === 0) {
     return NextResponse.json(
@@ -91,16 +103,17 @@ ${contextText}`,
     });
 
     // Create flashcard set
-    const { data: set, error: setError } = await supabase
+    const { data: setRaw, error: setError } = await supabase
       .from("flashcard_sets")
       .insert({
         course_id: courseId,
         user_id: user.id,
         title: title || `Flashcards: ${course.name}`,
         document_ids: documentIds,
-      })
+      } as never)
       .select("id")
       .single();
+    const set = setRaw as unknown as { id: string } | null;
 
     if (setError || !set) {
       return NextResponse.json(
@@ -119,7 +132,7 @@ ${contextText}`,
 
     const { error: cardsError } = await supabase
       .from("flashcards")
-      .insert(cardRows);
+      .insert(cardRows as never);
 
     if (cardsError) {
       await supabase.from("flashcard_sets").delete().eq("id", set.id);
@@ -130,20 +143,7 @@ ${contextText}`,
     }
 
     // Increment AI usage counter
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("ai_generations_used")
-      .eq("id", user.id)
-      .single();
-
-    if (profile) {
-      await supabase
-        .from("profiles")
-        .update({
-          ai_generations_used: profile.ai_generations_used + 1,
-        })
-        .eq("id", user.id);
-    }
+    await incrementUsage(user.id);
 
     return NextResponse.json({ setId: set.id });
   } catch (err) {

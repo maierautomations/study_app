@@ -54,12 +54,12 @@ const navItems = [
 const secondaryNavItems = [
   {
     title: "Wiederholungen",
-    href: "/dashboard/courses",
+    href: "/dashboard/reviews",
     icon: Layers,
   },
   {
     title: "Erfolge",
-    href: "/dashboard/courses",
+    href: "/dashboard/achievements",
     icon: Trophy,
   },
 ];

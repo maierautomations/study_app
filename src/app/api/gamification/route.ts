@@ -8,6 +8,7 @@ import {
   type ActivityType,
   type UserStats,
 } from "@/lib/gamification";
+import type { Profile, Achievement } from "@/types/database";
 
 export async function POST(req: Request) {
   const { action, courseId, metadata } = (await req.json()) as {
@@ -26,11 +27,12 @@ export async function POST(req: Request) {
   }
 
   // Get current profile
-  const { data: profile } = await supabase
+  const { data: profileRaw } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
     .single();
+  const profile = profileRaw as unknown as Profile | null;
 
   if (!profile) {
     return NextResponse.json({ error: "Profil nicht gefunden" }, { status: 404 });
@@ -69,7 +71,7 @@ export async function POST(req: Request) {
       current_streak: newStreak,
       longest_streak: newLongestStreak,
       last_study_date: todayStr,
-    })
+    } as never)
     .eq("id", user.id);
 
   // Record study session
@@ -79,7 +81,7 @@ export async function POST(req: Request) {
     course_id: courseId ?? null,
     metadata: metadata ?? {},
     xp_earned: xpEarned,
-  });
+  } as never);
 
   // Check for new achievements
   const [
@@ -112,13 +114,14 @@ export async function POST(req: Request) {
   };
 
   // Get existing achievements
-  const { data: existingUserAchievements } = await supabase
+  const { data: existingUserAchievementsRaw } = await supabase
     .from("user_achievements")
     .select("achievement_id, achievements(key)")
     .eq("user_id", user.id);
+  const existingUserAchievements = existingUserAchievementsRaw as unknown as Array<{ achievement_id: string; achievements: { key: string } | null }> | null;
 
   const existingKeys = (existingUserAchievements ?? []).map(
-    (ua: { achievements: { key: string } | null }) => ua.achievements?.key ?? ""
+    (ua) => ua.achievements?.key ?? ""
   );
 
   const newAchievementKeys = checkNewAchievements(stats, existingKeys);
@@ -126,10 +129,11 @@ export async function POST(req: Request) {
   // Unlock new achievements
   const newAchievements: { key: string; title_de: string; xp_reward: number; icon: string }[] = [];
   if (newAchievementKeys.length > 0) {
-    const { data: achievementRows } = await supabase
+    const { data: achievementRowsRaw } = await supabase
       .from("achievements")
       .select("*")
       .in("key", newAchievementKeys);
+    const achievementRows = achievementRowsRaw as unknown as Achievement[] | null;
 
     if (achievementRows) {
       let bonusXp = 0;
@@ -137,7 +141,7 @@ export async function POST(req: Request) {
         await supabase.from("user_achievements").insert({
           user_id: user.id,
           achievement_id: achievement.id,
-        });
+        } as never);
         bonusXp += achievement.xp_reward;
         newAchievements.push({
           key: achievement.key,
@@ -152,7 +156,7 @@ export async function POST(req: Request) {
         const totalXp = newXp + bonusXp;
         await supabase
           .from("profiles")
-          .update({ xp: totalXp, level: calculateLevel(totalXp) })
+          .update({ xp: totalXp, level: calculateLevel(totalXp) } as never)
           .eq("id", user.id);
       }
     }

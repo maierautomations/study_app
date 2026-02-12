@@ -16,6 +16,10 @@ import { XpProgress } from "@/components/gamification/xp-progress";
 import { StreakDisplay } from "@/components/gamification/streak-display";
 import { AchievementBadge } from "@/components/gamification/achievement-badge";
 import { OnboardingCheck } from "@/components/onboarding/onboarding-check";
+import type { Profile, StudySession, UserAchievement, Achievement } from "@/types/database";
+
+type SessionWithCourse = StudySession & { courses: { name: string } | null };
+type UAWithAchievement = UserAchievement & { achievements: Achievement | null };
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -24,12 +28,12 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
 
   const [
-    { data: profile },
+    profileResult,
     { count: courseCount },
     { count: documentCount },
     { count: quizCount },
-    { data: recentSessions },
-    { data: userAchievements },
+    sessionsResult,
+    achievementsResult,
     { count: dueReviewCount },
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user!.id).single(),
@@ -54,6 +58,10 @@ export default async function DashboardPage() {
       .eq("user_id", user!.id)
       .lte("next_review_at", new Date().toISOString()),
   ]);
+
+  const profile = profileResult.data as unknown as Profile | null;
+  const recentSessions = sessionsResult.data as unknown as SessionWithCourse[] | null;
+  const userAchievements = achievementsResult.data as unknown as UAWithAchievement[] | null;
 
   const displayName = profile?.display_name || "Studierende/r";
 
@@ -199,7 +207,7 @@ export default async function DashboardPage() {
                   Flashcards warten auf Wiederholung
                 </p>
                 <Button asChild size="sm" className="w-full">
-                  <Link href="/dashboard/courses">
+                  <Link href="/dashboard/reviews">
                     Jetzt lernen
                   </Link>
                 </Button>

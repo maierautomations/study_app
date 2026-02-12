@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getModel } from "@/lib/ai/provider";
 import { generateObject } from "ai";
 import { z } from "zod";
+import { checkFreemiumLimit, incrementUsage, getFreemiumErrorMessage } from "@/lib/freemium";
 
 const QuizOutputSchema = z.object({
   questions: z.array(
@@ -43,6 +44,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   }
 
+  // Freemium limit check
+  const freemium = await checkFreemiumLimit(user.id);
+  if (!freemium.allowed) {
+    return NextResponse.json(
+      { error: getFreemiumErrorMessage(freemium.used, freemium.limit) },
+      { status: 402 }
+    );
+  }
+
   const { courseId, documentIds, difficulty, questionCount, title } =
     await request.json();
 
@@ -54,12 +64,13 @@ export async function POST(request: NextRequest) {
   }
 
   // Verify course ownership
-  const { data: course } = await supabase
+  const { data: courseRaw } = await supabase
     .from("courses")
     .select("id, name")
     .eq("id", courseId)
     .eq("user_id", user.id)
     .single();
+  const course = courseRaw as unknown as { id: string; name: string } | null;
 
   if (!course) {
     return NextResponse.json(
@@ -69,11 +80,12 @@ export async function POST(request: NextRequest) {
   }
 
   // Get document chunks for selected documents
-  const { data: chunks } = await supabase
+  const { data: chunksRaw } = await supabase
     .from("document_chunks")
     .select("content, document_id")
     .in("document_id", documentIds)
     .order("chunk_index", { ascending: true });
+  const chunks = chunksRaw as unknown as Array<{ content: string; document_id: string }> | null;
 
   if (!chunks || chunks.length === 0) {
     return NextResponse.json(
@@ -119,7 +131,7 @@ ${contextText}`,
     });
 
     // Create quiz record
-    const { data: quiz, error: quizError } = await supabase
+    const { data: quizRaw, error: quizError } = await supabase
       .from("quizzes")
       .insert({
         course_id: courseId,
@@ -128,9 +140,10 @@ ${contextText}`,
         document_ids: documentIds,
         difficulty,
         question_count: object.questions.length,
-      })
+      } as never)
       .select("id")
       .single();
+    const quiz = quizRaw as unknown as { id: string } | null;
 
     if (quizError || !quiz) {
       return NextResponse.json(
@@ -155,7 +168,7 @@ ${contextText}`,
 
     const { error: questionsError } = await supabase
       .from("quiz_questions")
-      .insert(questionRows);
+      .insert(questionRows as never);
 
     if (questionsError) {
       // Clean up the quiz if questions failed
@@ -167,20 +180,7 @@ ${contextText}`,
     }
 
     // Increment AI usage counter
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("ai_generations_used")
-      .eq("id", user.id)
-      .single();
-
-    if (profile) {
-      await supabase
-        .from("profiles")
-        .update({
-          ai_generations_used: profile.ai_generations_used + 1,
-        })
-        .eq("id", user.id);
-    }
+    await incrementUsage(user.id);
 
     return NextResponse.json({ quizId: quiz.id });
   } catch (err) {

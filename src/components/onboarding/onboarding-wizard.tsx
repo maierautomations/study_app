@@ -79,7 +79,7 @@ export function OnboardingWizard({
     if (user) {
       await supabase
         .from("profiles")
-        .update({ onboarding_completed: true })
+        .update({ onboarding_completed: true } as never)
         .eq("id", user.id);
     }
     toast.success("Onboarding abgeschlossen! Viel Erfolg beim Lernen!");

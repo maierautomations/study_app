@@ -18,7 +18,7 @@ export default async function CoursesPage() {
     .from("courses")
     .select("*, documents(count), quizzes(count), flashcard_sets(count)")
     .eq("user_id", user.id)
-    .order("updated_at", { ascending: false });
+    .order("updated_at", { ascending: false }) as { data: (import("@/types/database").Course & { documents: { count: number }[]; quizzes: { count: number }[]; flashcard_sets: { count: number }[] })[] | null };
 
   return (
     <div className="p-6 space-y-6">

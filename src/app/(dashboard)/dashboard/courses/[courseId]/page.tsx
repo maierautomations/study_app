@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CourseDetail } from "@/components/course/course-detail";
+import type { Course, Document, Quiz, FlashcardSet } from "@/types/database";
 
 export default async function CourseDetailPage({
   params,
@@ -15,19 +16,20 @@ export default async function CourseDetailPage({
 
   if (!user) redirect("/login");
 
-  const { data: course } = await supabase
+  const { data: courseRaw } = await supabase
     .from("courses")
     .select("*")
     .eq("id", courseId)
     .eq("user_id", user.id)
     .single();
+  const course = courseRaw as unknown as Course | null;
 
   if (!course) notFound();
 
   const [
-    { data: documents },
-    { data: quizzes },
-    { data: flashcardSets },
+    { data: documentsRaw },
+    { data: quizzesRaw },
+    { data: flashcardSetsRaw },
   ] = await Promise.all([
     supabase
       .from("documents")
@@ -45,6 +47,9 @@ export default async function CourseDetailPage({
       .eq("course_id", courseId)
       .order("created_at", { ascending: false }),
   ]);
+  const documents = documentsRaw as unknown as Document[] | null;
+  const quizzes = quizzesRaw as unknown as Quiz[] | null;
+  const flashcardSets = flashcardSetsRaw as unknown as FlashcardSet[] | null;
 
   return (
     <CourseDetail
