@@ -103,6 +103,9 @@ ${context ? `KONTEXT AUS DEN LERNMATERIALIEN:\n${context}` : "Es sind keine Lern
     // Convert UIMessage[] to ModelMessage[] for streamText
     const modelMessages = await convertToModelMessages(uiMessages);
 
+    // Increment AI usage counter before streaming (pre-validate)
+    await incrementUsage(user.id);
+
     const result = streamText({
       model: getModel(),
       system: systemPrompt,
@@ -115,9 +118,6 @@ ${context ? `KONTEXT AUS DEN LERNMATERIALIEN:\n${context}` : "Es sind keine Lern
           role: "assistant" as const,
           content: text,
         } as never);
-
-        // Increment AI usage counter
-        await incrementUsage(user.id);
       },
     });
 

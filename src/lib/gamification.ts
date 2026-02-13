@@ -13,7 +13,7 @@ export const XP_REWARDS = {
 export type ActivityType = keyof typeof XP_REWARDS;
 
 // Level thresholds — progressive XP requirements
-const LEVEL_THRESHOLDS = [
+export const LEVEL_THRESHOLDS = [
   0,     // Level 1
   100,   // Level 2
   250,   // Level 3

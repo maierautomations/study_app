@@ -10,12 +10,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   ArrowLeft,
   Send,
   Bot,
   User,
   Loader2,
   Trash2,
+  Copy,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { trackActivity } from "@/lib/gamification-client";
@@ -72,6 +85,32 @@ function getMessageText(message: UIMessage): string {
     .filter((p): p is { type: "text"; text: string } => p.type === "text")
     .map((p) => p.text)
     .join("");
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+      onClick={handleCopy}
+      title="Kopieren"
+    >
+      {copied ? (
+        <Check className="h-3 w-3 text-green-500" />
+      ) : (
+        <Copy className="h-3 w-3" />
+      )}
+    </Button>
+  );
 }
 
 function ChatInterface({
@@ -161,10 +200,29 @@ function ChatInterface({
           </div>
         </div>
         {messages.length > 0 && (
-          <Button variant="ghost" size="sm" onClick={clearHistory}>
-            <Trash2 className="mr-2 h-4 w-4" />
-            Verlauf löschen
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Verlauf löschen
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Chat-Verlauf löschen?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Der gesamte Chat-Verlauf für diesen Kurs wird unwiderruflich gelöscht.
+                  Diese Aktion kann nicht rückgängig gemacht werden.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                <AlertDialogAction onClick={clearHistory}>
+                  Löschen
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
       </div>
 
@@ -201,7 +259,7 @@ function ChatInterface({
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`flex gap-3 ${
+            className={`group flex gap-3 ${
               message.role === "user" ? "justify-end" : "justify-start"
             }`}
           >
@@ -220,6 +278,11 @@ function ChatInterface({
               <div className="text-sm whitespace-pre-wrap prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
                 {getMessageText(message)}
               </div>
+              {message.role === "assistant" && (
+                <div className="flex justify-end mt-1">
+                  <CopyButton text={getMessageText(message)} />
+                </div>
+              )}
             </Card>
             {message.role === "user" && (
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">

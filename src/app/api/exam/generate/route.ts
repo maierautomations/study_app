@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getModel } from "@/lib/ai/provider";
+import { AI_CONTEXT_LIMITS } from "@/lib/ai/config";
 import { generateObject } from "ai";
 import { z } from "zod";
 import {
@@ -170,10 +171,9 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Build context text (~15000 chars for exam)
   let contextText = "";
   for (const chunk of chunks) {
-    if (contextText.length + chunk.content.length > 15000) break;
+    if (contextText.length + chunk.content.length > AI_CONTEXT_LIMITS.exam) break;
     contextText += chunk.content + "\n\n";
   }
 

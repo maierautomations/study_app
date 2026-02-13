@@ -62,20 +62,28 @@ export async function checkFreemiumLimit(
 export async function incrementUsage(userId: string): Promise<void> {
   const supabase = await createClient();
 
-  const { data: profileRaw } = await supabase
-    .from("profiles")
-    .select("ai_generations_used")
-    .eq("id", userId)
-    .single();
-  const profile = profileRaw as unknown as { ai_generations_used: number } | null;
+  // Atomic increment to prevent race conditions with parallel requests
+  const { error } = await (supabase.rpc as Function)("increment_ai_usage", {
+    user_id_param: userId,
+  });
 
-  if (profile) {
-    await supabase
+  // Fallback to read-then-write if RPC doesn't exist yet
+  if (error) {
+    const { data: profileRaw } = await supabase
       .from("profiles")
-      .update({
-        ai_generations_used: profile.ai_generations_used + 1,
-      } as never)
-      .eq("id", userId);
+      .select("ai_generations_used")
+      .eq("id", userId)
+      .single();
+    const profile = profileRaw as unknown as { ai_generations_used: number } | null;
+
+    if (profile) {
+      await supabase
+        .from("profiles")
+        .update({
+          ai_generations_used: profile.ai_generations_used + 1,
+        } as never)
+        .eq("id", userId);
+    }
   }
 }
 

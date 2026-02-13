@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -52,7 +52,16 @@ export function CourseDetail({
   const [retryingDocId, setRetryingDocId] = useState<string | null>(null);
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  const activeTab = searchParams.get("tab") ?? "documents";
+
+  function handleTabChange(value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", value);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }
 
   async function retryDocument(docId: string) {
     setRetryingDocId(docId);
@@ -174,7 +183,7 @@ export function CourseDetail({
         </div>
       </div>
 
-      <Tabs defaultValue="documents">
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList>
           <TabsTrigger value="documents" className="gap-1.5">
             <FileText className="h-4 w-4" />

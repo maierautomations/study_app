@@ -6,6 +6,7 @@ import { generateEmbeddings } from "@/lib/ai/embeddings";
 import type { Document } from "@/types/database";
 
 export async function POST(request: NextRequest) {
+  try {
   const supabase = await createClient();
   const {
     data: { user },
@@ -135,4 +136,11 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ processed: processedCount });
+  } catch (err) {
+    console.error("[Document Process Error]", err);
+    return NextResponse.json(
+      { error: "Verarbeitung fehlgeschlagen" },
+      { status: 500 }
+    );
+  }
 }

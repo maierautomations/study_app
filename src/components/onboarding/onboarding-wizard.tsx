@@ -20,6 +20,7 @@ import {
   Sparkles,
   ArrowRight,
   Check,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -103,10 +104,19 @@ export function OnboardingWizard({
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
             <span>
               Schritt {currentStep + 1} von {steps.length}
             </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs"
+              onClick={handleComplete}
+            >
+              <X className="mr-1 h-3 w-3" />
+              Überspringen
+            </Button>
           </div>
           <Progress value={progress} className="h-1.5 mb-4" />
           <div className="flex justify-center mb-4">

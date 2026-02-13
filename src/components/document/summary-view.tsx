@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Loader2, BookOpen, Tag, FileText, Download } from "lucide-react";
+import { Sparkles, Loader2, BookOpen, Tag, FileText, Download, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 
 interface DocumentSummary {
@@ -31,6 +31,15 @@ export function SummaryView({
     cachedSummary ? JSON.parse(cachedSummary) : null
   );
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    if (!summary) return;
+    const text = `${summary.title}\n\n${summary.summary}\n\nKernaussagen:\n${summary.keyPoints.map((p) => `• ${p}`).join("\n")}\n\nSchlüsselbegriffe: ${summary.keywords.join(", ")}`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   async function generateSummary() {
     setLoading(true);
@@ -91,22 +100,37 @@ export function SummaryView({
             <FileText className="h-4 w-4 text-primary" />
             <CardTitle className="text-base">{summary.title}</CardTitle>
           </div>
-          {courseId && (
+          <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
               className="h-7 w-7 p-0"
-              title="Als PDF exportieren"
-              onClick={() =>
-                window.open(
-                  `/api/export/summary?courseId=${courseId}&contentId=${documentId}`,
-                  "_blank"
-                )
-              }
+              title="Kopieren"
+              onClick={handleCopy}
             >
-              <Download className="h-3.5 w-3.5" />
+              {copied ? (
+                <Check className="h-3.5 w-3.5 text-green-500" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" />
+              )}
             </Button>
-          )}
+            {courseId && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0"
+                title="Als PDF exportieren"
+                onClick={() =>
+                  window.open(
+                    `/api/export/summary?courseId=${courseId}&contentId=${documentId}`,
+                    "_blank"
+                  )
+                }
+              >
+                <Download className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

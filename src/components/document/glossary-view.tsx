@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Loader2, Search } from "lucide-react";
+import { BookOpen, Loader2, Search, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 
 type GlossaryTerm = {
@@ -31,6 +31,15 @@ export function GlossaryView({
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [expanded, setExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  function handleCopyAll() {
+    if (!terms) return;
+    const text = terms.map((t) => `${t.term}: ${t.definition}`).join("\n\n");
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   async function generateGlossary() {
     setLoading(true);
@@ -105,16 +114,31 @@ export function GlossaryView({
               )}
             </Button>
           ) : (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setExpanded(!expanded)}
-            >
-              {expanded ? "Einklappen" : "Aufklappen"}
-              <Badge variant="secondary" className="ml-2">
-                {terms.length} Begriffe
-              </Badge>
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 w-7 p-0"
+                title="Alle Begriffe kopieren"
+                onClick={handleCopyAll}
+              >
+                {copied ? (
+                  <Check className="h-3.5 w-3.5 text-green-500" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setExpanded(!expanded)}
+              >
+                {expanded ? "Einklappen" : "Aufklappen"}
+                <Badge variant="secondary" className="ml-2">
+                  {terms.length} Begriffe
+                </Badge>
+              </Button>
+            </div>
           )}
         </div>
       </CardHeader>

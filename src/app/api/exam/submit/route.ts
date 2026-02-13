@@ -1,22 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-
-/**
- * Maps a percentage score (0-100) to the German grading system.
- */
-function scoreToGrade(score: number): string {
-  if (score >= 95) return "1,0";
-  if (score >= 90) return "1,3";
-  if (score >= 85) return "1,7";
-  if (score >= 80) return "2,0";
-  if (score >= 75) return "2,3";
-  if (score >= 70) return "2,7";
-  if (score >= 65) return "3,0";
-  if (score >= 60) return "3,3";
-  if (score >= 55) return "3,7";
-  if (score >= 50) return "4,0";
-  return "5,0";
-}
+import { scoreToGermanGrade } from "@/lib/grading";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -98,7 +82,7 @@ export async function POST(request: NextRequest) {
     exam.total_points > 0
       ? Math.round((earnedPoints / exam.total_points) * 100)
       : 0;
-  const grade = scoreToGrade(score);
+  const grade = scoreToGermanGrade(score);
 
   // Update exam attempt
   const { error: updateError } = await supabase

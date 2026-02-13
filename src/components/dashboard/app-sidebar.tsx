@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import {
   BookOpen,
   CalendarDays,
@@ -38,6 +39,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
+import { LEVEL_THRESHOLDS } from "@/lib/gamification";
 
 const navItems = [
   {
@@ -108,7 +110,6 @@ export function AppSidebar({ user, gamification }: AppSidebarProps) {
   // XP progress calculation
   const xp = gamification?.xp ?? 0;
   const level = gamification?.level ?? 1;
-  const LEVEL_THRESHOLDS = [0, 100, 250, 500, 1000, 1750, 2750, 4000, 5500, 7500, 10000, 13000, 16500, 20500, 25000];
   const currentLevelXp = LEVEL_THRESHOLDS[level - 1] ?? 0;
   const nextLevelXp = LEVEL_THRESHOLDS[level] ?? LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1] + 5000;
   const xpProgress = Math.min(Math.round(((xp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100), 100);
@@ -188,7 +189,10 @@ export function AppSidebar({ user, gamification }: AppSidebarProps) {
             <SidebarMenu>
               {secondaryNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === item.href || pathname.startsWith(item.href + "/")}
+                  >
                     <a href={item.href}>
                       <item.icon className="size-4" />
                       <span>{item.title}</span>
@@ -225,8 +229,16 @@ export function AppSidebar({ user, gamification }: AppSidebarProps) {
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">
+                    <span className="truncate font-semibold flex items-center gap-1.5">
                       {user.displayName || "Benutzer"}
+                      {gamification && (
+                        <Badge
+                          variant={gamification.tier === "premium" ? "default" : "secondary"}
+                          className="text-[10px] px-1.5 py-0 h-4"
+                        >
+                          {gamification.tier === "premium" ? "Pro" : "Free"}
+                        </Badge>
+                      )}
                     </span>
                     <span className="truncate text-xs text-muted-foreground">
                       {user.email}

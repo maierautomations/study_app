@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getModel } from "@/lib/ai/provider";
+import { AI_CONTEXT_LIMITS } from "@/lib/ai/config";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { checkFreemiumLimit, incrementUsage, getFreemiumErrorMessage } from "@/lib/freemium";
@@ -114,10 +115,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Limit context to ~12000 characters
   let contextText = "";
   for (const chunk of chunks) {
-    if (contextText.length + chunk.content.length > 12000) break;
+    if (contextText.length + chunk.content.length > AI_CONTEXT_LIMITS.default) break;
     contextText += chunk.content + "\n\n";
   }
 

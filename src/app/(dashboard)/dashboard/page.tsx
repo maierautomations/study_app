@@ -10,6 +10,7 @@ import {
   Clock,
   Trophy,
   Layers,
+  ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
 import { XpProgress } from "@/components/gamification/xp-progress";
@@ -156,11 +157,14 @@ export default async function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {/* Recent Activity */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <Clock className="h-4 w-4" />
               Letzte Aktivität
             </CardTitle>
+            <Link href="/dashboard/courses" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-0.5 transition-colors">
+              Alle anzeigen <ChevronRight className="h-3 w-3" />
+            </Link>
           </CardHeader>
           <CardContent>
             {recentSessions && recentSessions.length > 0 ? (
@@ -193,11 +197,14 @@ export default async function DashboardPage() {
 
         {/* Due Reviews */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <Layers className="h-4 w-4" />
               Wiederholungen fällig
             </CardTitle>
+            <Link href="/dashboard/reviews" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-0.5 transition-colors">
+              Alle anzeigen <ChevronRight className="h-3 w-3" />
+            </Link>
           </CardHeader>
           <CardContent>
             {(dueReviewCount ?? 0) > 0 ? (
@@ -222,11 +229,14 @@ export default async function DashboardPage() {
 
         {/* Achievements Preview */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <Trophy className="h-4 w-4" />
               Erfolge
             </CardTitle>
+            <Link href="/dashboard/achievements" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-0.5 transition-colors">
+              Alle anzeigen <ChevronRight className="h-3 w-3" />
+            </Link>
           </CardHeader>
           <CardContent>
             {userAchievements && userAchievements.length > 0 ? (
