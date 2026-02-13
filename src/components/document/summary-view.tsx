@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Loader2, BookOpen, Tag, FileText } from "lucide-react";
+import { Sparkles, Loader2, BookOpen, Tag, FileText, Download } from "lucide-react";
 import { toast } from "sonner";
 
 interface DocumentSummary {
@@ -18,12 +18,14 @@ interface SummaryViewProps {
   documentId: string;
   documentName: string;
   cachedSummary: string | null;
+  courseId?: string;
 }
 
 export function SummaryView({
   documentId,
   documentName,
   cachedSummary,
+  courseId,
 }: SummaryViewProps) {
   const [summary, setSummary] = useState<DocumentSummary | null>(
     cachedSummary ? JSON.parse(cachedSummary) : null
@@ -84,9 +86,27 @@ export function SummaryView({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-primary" />
-          <CardTitle className="text-base">{summary.title}</CardTitle>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-primary" />
+            <CardTitle className="text-base">{summary.title}</CardTitle>
+          </div>
+          {courseId && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0"
+              title="Als PDF exportieren"
+              onClick={() =>
+                window.open(
+                  `/api/export/summary?courseId=${courseId}&contentId=${documentId}`,
+                  "_blank"
+                )
+              }
+            >
+              <Download className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

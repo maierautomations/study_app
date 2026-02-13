@@ -5,8 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { TrendingDown, AlertTriangle, CheckCircle2, BarChart3 } from "lucide-react";
-import { analyzeWeaknesses, computeQuizTrend, type DocumentWeakness, type QuizTrend } from "@/lib/analytics";
+import { TrendingDown, TrendingUp, Minus, AlertTriangle, CheckCircle2, BarChart3, GraduationCap } from "lucide-react";
+import { analyzeWeaknesses, computeQuizTrend, predictGrade, type DocumentWeakness, type QuizTrend, type GradePrediction } from "@/lib/analytics";
 import type { QuizAnswer } from "@/types/database";
 
 interface WeaknessChartProps {
@@ -22,6 +22,7 @@ export function WeaknessChart({
 }: WeaknessChartProps) {
   const [weaknesses, setWeaknesses] = useState<DocumentWeakness[]>([]);
   const [trends, setTrends] = useState<QuizTrend[]>([]);
+  const [prediction, setPrediction] = useState<GradePrediction | null>(null);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
@@ -49,8 +50,10 @@ export function WeaknessChart({
 
       const w = analyzeWeaknesses(attempts, quizzes, documents);
       const t = computeQuizTrend(attempts, quizzes);
+      const p = predictGrade(attempts);
       setWeaknesses(w);
       setTrends(t);
+      setPrediction(p);
       setLoading(false);
     }
     loadData();
@@ -117,6 +120,79 @@ export function WeaknessChart({
           </CardContent>
         </Card>
       </div>
+
+      {/* Grade prediction */}
+      {prediction && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <GraduationCap className="h-4 w-4 text-primary" />
+              Notenprognose
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-6">
+              <div className="text-center">
+                <p
+                  className={`text-4xl font-bold ${
+                    prediction.predictedScore >= 65
+                      ? "text-green-600"
+                      : prediction.predictedScore >= 50
+                        ? "text-orange-600"
+                        : "text-red-600"
+                  }`}
+                >
+                  {prediction.predictedGrade}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Prognostiziert
+                </p>
+              </div>
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  {prediction.trend === "improving" ? (
+                    <TrendingUp className="h-4 w-4 text-green-500" />
+                  ) : prediction.trend === "declining" ? (
+                    <TrendingDown className="h-4 w-4 text-red-500" />
+                  ) : (
+                    <Minus className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <span>
+                    {prediction.trend === "improving"
+                      ? "Aufwärtstrend"
+                      : prediction.trend === "declining"
+                        ? "Abwärtstrend"
+                        : "Stabil"}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Spanne: {prediction.minGrade} – {prediction.maxGrade} (±1σ)
+                </p>
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant={
+                      prediction.confidence === "high"
+                        ? "default"
+                        : prediction.confidence === "medium"
+                          ? "secondary"
+                          : "outline"
+                    }
+                  >
+                    {prediction.confidence === "high"
+                      ? "Hohe Konfidenz"
+                      : prediction.confidence === "medium"
+                        ? "Mittlere Konfidenz"
+                        : "Niedrige Konfidenz"}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    Basierend auf {prediction.dataPoints} Versuchen
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Weakness analysis */}
       {weaknesses.length > 0 && (

@@ -26,6 +26,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import {
   BookOpen,
+  CalendarDays,
   GraduationCap,
   LayoutDashboard,
   LogOut,
@@ -56,6 +57,11 @@ const secondaryNavItems = [
     title: "Wiederholungen",
     href: "/dashboard/reviews",
     icon: Layers,
+  },
+  {
+    title: "Lernplan",
+    href: "/dashboard/study-plan",
+    icon: CalendarDays,
   },
   {
     title: "Erfolge",

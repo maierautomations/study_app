@@ -399,7 +399,7 @@ study_app/
 - Checkboxen: MC / Wahr-Falsch / Offene Fragen (min. 1 ausgewählt)
 - `getQuestionTypesPrompt()` in Quiz-Generate API
 
-### Phase E: Premium-Features (in Arbeit)
+### Phase E: Premium-Features ✅
 
 **E1. Klausur-Simulator** ✅
 - `src/app/api/exam/generate/route.ts` — Probeklausur generieren (gewichtete Schwächen, Fragetyp-Mix, Zeitlimit)
@@ -421,9 +421,22 @@ study_app/
 - `supabase/migrations/00005_glossary_column.sql` — `documents.glossary` Spalte
 - Integriert in Kurs-Detailseite (Dokumente-Tab, unter Zusammenfassungen)
 
-**E4. Lernplan-Generator (Pro only)** ⏳ (API fertig, UI ausstehend)
+**E4. Lernplan-Generator (Pro only)** ✅
 - `src/app/api/study-plan/generate/route.ts` — Prüfungsdatum + Lernzeit → Tag-für-Tag Plan
-- UI-Seite + Komponente noch ausstehend
+- `src/app/(dashboard)/dashboard/study-plan/page.tsx` — Kursauswahl, Datumswähler, Lernzeit-Selektor, Pro-Gate
+- `src/components/study-plan/plan-view.tsx` — Tagesansicht mit farbcodierten Aufgaben-Badges
+- Sidebar-Link "Lernplan" mit CalendarDays Icon
+
+**E5. Export-Funktionen** ✅
+- `src/app/api/export/[type]/route.ts` — GET: Quiz/Flashcards/Summary als PDF, Flashcards als Anki-Text
+- `src/lib/export/pdf-generator.ts` — Server-side PDF mit pdfkit
+- `src/lib/export/anki-export.ts` — Anki-kompatible Tab-separated .txt Datei (Pro only)
+- Download-Buttons in Kurs-Detailseite (Quiz-, Flashcard-, Summary-Cards)
+
+**E6. Notenprognose** ✅
+- `src/lib/analytics.ts` — `predictGrade()`: Exponentiell gewichteter Durchschnitt → deutsches Notensystem
+- Trend (improving/stable/declining), Konfidenz (low/medium/high), ±1σ Spanne
+- "Notenprognose"-Card im Fortschritt-Tab der Kurs-Detailseite
 
 ---
 
@@ -433,5 +446,5 @@ study_app/
 2. **Phase B:** ✅ Neuer User sieht Onboarding → Dashboard zeigt XP/Streaks/Aktivität → Gamification funktioniert
 3. **Phase C:** ✅ Review Session: Karten flippen + bewerten → SM-2 plant nächstes Review → Freemium blockiert bei Limit
 4. **Phase D:** ✅ Landing Page rendert → `npm run build` sauber → DSGVO-Seiten vorhanden → Zusammenfassungen + Schwächenanalyse funktionieren
-5. **Phase E:** ⏳ E1 (Klausur-Simulator) ✅, E2 (Multi-Output) ✅, E3 (Glossar) ✅, E4 (Lernplan) API ✅ — Rest ausstehend
+5. **Phase E:** ✅ E1 (Klausur-Simulator) ✅, E2 (Multi-Output) ✅, E3 (Glossar) ✅, E4 (Lernplan) ✅, E5 (Export) ✅, E6 (Notenprognose) ✅
 6. **Phase F:** Stripe-Zahlung funktioniert → Vercel Deployment läuft → App produktionsreif

@@ -1,6 +1,6 @@
 # StudyApp — Feature-Roadmap & Pricing-Strategie
 
-> Erstellt: 2026-02-11 | Status: Phase 1-3 + A + B + C + D abgeschlossen, E1-E3 ✅ | Nächste: E4-E6, Phase F
+> Erstellt: 2026-02-11 | Status: Phase 1-3 + A + B + C + D + E abgeschlossen ✅ | Nächste: Phase F (Stripe, Deployment)
 
 ---
 
@@ -224,7 +224,7 @@ async function checkFreemiumLimit(userId: string): Promise<{
 
 ---
 
-### Phase E: Premium-Features (in Arbeit, E1-E3 ✅)
+### Phase E: Premium-Features ✅ (abgeschlossen 2026-02-13)
 
 > **Ziel**: Premium-Features die den Upgrade-Preis rechtfertigen und die App klar von Wettbewerbern differenzieren.
 > **Geschätzter Umfang**: ~15 Dateien
@@ -287,7 +287,7 @@ Hoher wahrgenommener Wert für Studierende!
 Bonus: Glossar-Begriffe als Flashcards exportieren (0 Extra-Kosten)
 ```
 
-#### E4. Lernplan-Generator (Pro only) ⏳ (API fertig)
+#### E4. Lernplan-Generator (Pro only) ✅
 **Dateien**:
 - `src/app/api/study-plan/generate/route.ts` (neu) — POST: Prüfungsdatum + Stoffmenge + bisherige Scores → AI generiert Tagesplan
 - `src/components/study-plan/plan-view.tsx` (neu) — Kalender-Ansicht, tägliche Aufgaben, Fortschrittsbalken
@@ -300,31 +300,32 @@ Kosten: ~$0.001 pro Plan (einmalig, sehr günstig)
 Update: Automatisch anpassen wenn Quiz-Scores sich ändern
 ```
 
-#### E5. Export-Funktionen
+#### E5. Export-Funktionen ✅
 **Dateien**:
-- `src/lib/export/pdf-generator.ts` (neu) — Quiz/Flashcards/Summary als PDF
-- `src/lib/export/anki-export.ts` (neu, Pro only) — Flashcards als Anki-kompatible `.apkg` Datei
+- `src/lib/export/pdf-generator.ts` (neu) — Quiz/Flashcards/Summary als PDF (pdfkit)
+- `src/lib/export/anki-export.ts` (neu, Pro only) — Flashcards als Anki-kompatible .txt Datei
 - `src/app/api/export/[type]/route.ts` (neu)
 
 ```
 Formate:
 - Basis: PDF-Export (Quizzes, Flashcards, Zusammenfassungen)
 - Pro: PDF + Anki-Export (für User die parallel Anki nutzen)
-Bibliothek: pdfkit oder @react-pdf/renderer (server-side)
+Bibliothek: pdfkit (server-side)
 Kein AI nötig — rein algorithmisch!
 ```
 
-#### E6. Notenprognose (Pro only)
-**Datei**: `src/lib/analytics.ts` (erweitern) — Rein algorithmisch
+#### E6. Notenprognose (Pro only) ✅
+**Datei**: `src/lib/analytics.ts` (erweitert) — Rein algorithmisch
 
 ```
 Algorithmus (0 API-Kosten):
-1. Letzte 5 Quiz-Scores pro Kurs sammeln
-2. Gewichteter Durchschnitt (neuere Scores zählen mehr)
-3. Trend-Berechnung (besser/schlechter werdend)
-4. Mapping auf deutsches Notensystem
-5. Konfidenz-Intervall (basierend auf Streuung)
-Anzeige: "Prognostizierte Note: 2,3 (±0,4)" mit Trend-Pfeil
+1. Letzte 10 Quiz-Scores pro Kurs sammeln
+2. Exponentiell gewichteter Durchschnitt (neuere Scores zählen mehr, decay=0.7)
+3. Trend-Berechnung (improving/stable/declining, basierend auf Halbvergleich)
+4. Mapping auf deutsches Notensystem (scoreToGermanGrade)
+5. Konfidenz-Intervall (basierend auf Streuung, ±1σ)
+Anzeige: "Prognostizierte Note: 2,3" mit Trend-Pfeil + Konfidenz-Badge
+UI: Notenprognose-Card im Fortschritt-Tab der Kurs-Detailseite
 ```
 
 #### E-Reihenfolge
@@ -608,15 +609,9 @@ Noch hinzufügen (Phase D/E):
 
 ### ~~Phase D~~ ✅ Abgeschlossen (2026-02-12)
 
-### Jetzt (Phase E) — Premium-Features — In Arbeit
-1. ✅ Klausur-Simulator (Killer-Feature, stärkster Conversion Trigger)
-2. ✅ Multi-Output Generation (Kostenoptimierung)
-3. ✅ Fachbegriff-Glossar (günstig, schnell, hoher Wert)
-4. ⏳ Lernplan-Generator (API fertig, UI ausstehend)
-5. Export (PDF/Anki)
-6. Notenprognose (algorithmisch)
+### ~~Phase E~~ ✅ Abgeschlossen (2026-02-13)
 
-### Monetarisierung + Deployment + Wachstum (Phase F) — 3-4 Wochen
+### Jetzt (Phase F) — Monetarisierung + Deployment + Wachstum
 1. Stripe-Integration (Checkout + Webhooks)
 2. Vercel Deployment + Produktions-Test
 3. PWA für Mobile

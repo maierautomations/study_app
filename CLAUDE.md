@@ -8,7 +8,7 @@ StudyApp is an AI-powered exam preparation web app for German-speaking universit
 
 ## Current Status
 
-**Phases 1-3, A, B, C, D are complete. Phase E partially complete (E1-E3 done, E4 API done). Next: E4 page/component, E5 Export, E6 Notenprognose.**
+**Phases 1-3, A, B, C, D, E are complete. Next: Phase F (Stripe, Deployment).**
 
 See `ROADMAP.md` for the full feature roadmap and `PLAN.md` for architectural details.
 
@@ -125,7 +125,25 @@ The course detail page (`/dashboard/courses/[courseId]`) uses client-side tabs (
 
 ### Study Plan Generator (Phase E4, Pro only)
 - `POST /api/study-plan/generate` — Takes courseId, examDate, dailyMinutes. Generates day-by-day plan with tasks (read, quiz, flashcards, review, exam). Pro tier check (403 for non-Pro).
-- `src/app/(dashboard)/dashboard/study-plan/page.tsx` — Study plan page (WIP).
+- `src/app/(dashboard)/dashboard/study-plan/page.tsx` — Study plan page with course selector, exam date picker, daily minutes selector. Pro gate (Lock icon for non-Pro users).
+- `src/components/study-plan/plan-view.tsx` — Day-by-day plan display: summary card, daily cards with color-coded task type badges, "Heute" highlight, duration per task.
+- Sidebar link: "Lernplan" in secondary nav with CalendarDays icon.
+
+### Export (Phase E5)
+- `GET /api/export/[type]?courseId=xxx&contentId=yyy` — Export API supporting 4 types:
+  - `quiz` — Quiz questions + answers as PDF (pdfkit server-side generation)
+  - `flashcards` — Flashcard set (front/back) as PDF
+  - `summary` — Document summary as PDF (requires existing cached summary)
+  - `anki` — Flashcards as Anki-compatible tab-separated text file (Pro only, 403 for non-Pro)
+- `src/lib/export/pdf-generator.ts` — Server-side PDF generation with pdfkit: `generateQuizPDF()`, `generateFlashcardsPDF()`, `generateSummaryPDF()`
+- `src/lib/export/anki-export.ts` — `generateAnkiExport()` creates Anki-importable text with deck name, separator config
+- Export buttons: Download icons on quiz cards, flashcard cards (PDF + Anki), and summary cards in course detail page.
+- No AI cost — purely algorithmic.
+
+### Grade Prediction (Phase E6, Pro only)
+- `src/lib/analytics.ts` — `predictGrade()`: Exponentially weighted moving average of last 10 quiz scores, maps to German grade (1,0-5,0). Includes confidence level (low/medium/high based on data points and variance), trend detection (improving/stable/declining), and ±1σ grade range.
+- Displayed as "Notenprognose" card in course detail "Fortschritt" tab with large grade display, trend arrow, confidence badge.
+- No AI cost — purely algorithmic.
 
 ## Key Conventions
 
@@ -134,7 +152,7 @@ The course detail page (`/dashboard/courses/[courseId]`) uses client-side tabs (
 - Icons from `lucide-react`
 - Database migrations live in `supabase/migrations/` (numbered SQL files)
 - Environment variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`
-- `next.config.ts` has `serverExternalPackages: ["pdf-parse"]` for server-side PDF processing
+- `next.config.ts` has `serverExternalPackages: ["pdf-parse", "pdfkit"]` for server-side PDF processing/generation
 - Course components in `src/components/course/`, document components in `src/components/document/`
 - Gamification components in `src/components/gamification/`, onboarding in `src/components/onboarding/`
 - Freemium components in `src/components/freemium/`, flashcard review in `src/components/flashcard/`

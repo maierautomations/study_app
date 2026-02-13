@@ -22,6 +22,7 @@ import {
   BarChart3,
   GraduationCap,
   Zap,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -80,6 +81,13 @@ export function CourseDetail({
     } finally {
       setRetryingDocId(null);
     }
+  }
+
+  function triggerExport(type: string, contentId: string) {
+    window.open(
+      `/api/export/${type}?courseId=${course.id}&contentId=${contentId}`,
+      "_blank"
+    );
   }
 
   async function handleGenerateAll() {
@@ -310,6 +318,7 @@ export function CourseDetail({
                     documentId={doc.id}
                     documentName={doc.name}
                     cachedSummary={(doc as Document & { summary?: string | null }).summary ?? null}
+                    courseId={course.id}
                   />
                 ))}
             </div>
@@ -363,27 +372,39 @@ export function CourseDetail({
           ) : (
             <div className="space-y-2">
               {quizzes.map((quiz) => (
-                <Link
-                  key={quiz.id}
-                  href={`/dashboard/courses/${course.id}/quiz/${quiz.id}`}
-                >
-                  <Card className="hover:bg-muted/50 transition-colors">
-                    <CardContent className="flex items-center justify-between py-3">
-                      <div>
-                        <p className="font-medium text-sm">{quiz.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {quiz.question_count} Fragen &middot;{" "}
-                          {quiz.difficulty === "easy"
-                            ? "Leicht"
-                            : quiz.difficulty === "medium"
-                              ? "Mittel"
-                              : "Schwer"}
-                        </p>
-                      </div>
+                <Card key={quiz.id} className="hover:bg-muted/50 transition-colors">
+                  <CardContent className="flex items-center justify-between py-3">
+                    <Link
+                      href={`/dashboard/courses/${course.id}/quiz/${quiz.id}`}
+                      className="flex-1"
+                    >
+                      <p className="font-medium text-sm">{quiz.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {quiz.question_count} Fragen &middot;{" "}
+                        {quiz.difficulty === "easy"
+                          ? "Leicht"
+                          : quiz.difficulty === "medium"
+                            ? "Mittel"
+                            : "Schwer"}
+                      </p>
+                    </Link>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        title="Als PDF exportieren"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          triggerExport("quiz", quiz.id);
+                        }}
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
                       <BrainCircuit className="h-5 w-5 text-muted-foreground" />
-                    </CardContent>
-                  </Card>
-                </Link>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
               {documents.some((d) => d.status === "ready") && (
                 <Button
@@ -431,19 +452,43 @@ export function CourseDetail({
           ) : (
             <div className="space-y-2">
               {flashcardSets.map((set) => (
-                <Link
-                  key={set.id}
-                  href={`/dashboard/courses/${course.id}/flashcards/${set.id}`}
-                >
-                  <Card className="hover:bg-muted/50 transition-colors">
-                    <CardContent className="flex items-center justify-between py-3">
-                      <div>
-                        <p className="font-medium text-sm">{set.title}</p>
-                      </div>
+                <Card key={set.id} className="hover:bg-muted/50 transition-colors">
+                  <CardContent className="flex items-center justify-between py-3">
+                    <Link
+                      href={`/dashboard/courses/${course.id}/flashcards/${set.id}`}
+                      className="flex-1"
+                    >
+                      <p className="font-medium text-sm">{set.title}</p>
+                    </Link>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        title="Als PDF exportieren"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          triggerExport("flashcards", set.id);
+                        }}
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-1.5 text-xs"
+                        title="Anki-Export (Pro)"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          triggerExport("anki", set.id);
+                        }}
+                      >
+                        Anki
+                      </Button>
                       <Layers className="h-5 w-5 text-muted-foreground" />
-                    </CardContent>
-                  </Card>
-                </Link>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
               {documents.some((d) => d.status === "ready") && (
                 <Button
