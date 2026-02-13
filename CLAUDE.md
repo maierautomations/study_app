@@ -8,9 +8,9 @@ StudyApp is an AI-powered exam preparation web app for German-speaking universit
 
 ## Current Status
 
-**Phases 1-3, A, B, C, D, E are complete. Next: Phase F (Stripe, Deployment).**
+**Phases 1-3, A, B, C, D, E are complete. Quick Wins from IMPROVEMENT_PLAN.md are done (14/14). Next: "Wichtig" items from IMPROVEMENT_PLAN.md, then "Nice to Have", then Phase F (Stripe, Deployment).**
 
-See `ROADMAP.md` for the full feature roadmap and `PLAN.md` for architectural details.
+See `ROADMAP.md` for the full feature roadmap, `PLAN.md` for architectural details, and `IMPROVEMENT_PLAN.md` for the prioritized improvement list.
 
 ## Commands
 
@@ -160,6 +160,19 @@ The course detail page (`/dashboard/courses/[courseId]`) uses client-side tabs (
 - Landing page components in `src/components/landing/`
 - Progress/analytics components in `src/components/progress/`
 - All UI text is in German; code (variable names, comments) is in English
+
+### Quick Wins (completed)
+- `src/lib/grading.ts` — Shared `scoreToGermanGrade()` (deduplicated from analytics.ts + exam/submit)
+- `src/lib/ai/config.ts` — Central `AI_CONTEXT_LIMITS` (replaces hardcoded magic numbers in 5 API routes)
+- `supabase/migrations/00006_increment_usage_rpc.sql` — Atomic `increment_ai_usage` RPC for freemium race condition fix
+- Tab URL persistence in course detail via `?tab=` searchParam
+- Chat: copy-to-clipboard + clear confirmation (AlertDialog)
+- Onboarding: skip button (X icon)
+- Sidebar: secondary nav active state, tier badge (Pro/Free), deduplicated LEVEL_THRESHOLDS
+- Dashboard: "Alle anzeigen" links on bottom cards
+- Summary/Glossary: copy buttons
+- Document processing: outer try-catch
+- Chat: freemium pre-validation (increment before streaming, not after)
 
 ## Known Issues
 
