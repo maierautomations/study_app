@@ -7,6 +7,10 @@ type GamificationResponse = {
   level: number;
   leveled_up: boolean;
   streak: number;
+  streak_freeze_used: boolean;
+  daily_goal_completed: boolean;
+  daily_goal_progress: number;
+  daily_goal_target: number;
   new_achievements: {
     key: string;
     title_de: string;
@@ -53,6 +57,23 @@ export async function trackActivity(
       triggerConfetti();
       toast.success(`Level ${data.level} erreicht!`, {
         description: `Du hast jetzt ${data.total_xp} XP.`,
+        duration: 5000,
+      });
+    }
+
+    // Daily goal completion celebration
+    if (data.daily_goal_completed) {
+      triggerConfetti();
+      toast.success("Tagesziel erreicht!", {
+        description: "+25 XP Bonus erhalten. Weiter so!",
+        duration: 5000,
+      });
+    }
+
+    // Streak freeze notification
+    if (data.streak_freeze_used) {
+      toast.info("Streak-Freeze hat deine Serie gerettet!", {
+        description: `Deine ${data.streak}-Tage-Serie wurde beibehalten.`,
         duration: 5000,
       });
     }

@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import {
   getXpForActivity,
+  getMinutesForActivity,
   calculateLevel,
   updateStreak,
   checkNewAchievements,
+  checkStreakFreezeRefill,
   type UserStats,
 } from "@/lib/gamification";
 import { parseBody, gamificationSchema } from "@/lib/validations";
@@ -45,34 +47,76 @@ export async function POST(req: Request) {
   const newLevel = calculateLevel(newXp);
   const leveledUp = newLevel > profile.level;
 
-  // Update streak
+  // Check/refill streak freezes for Pro users
+  const freezeRefill = checkStreakFreezeRefill(profile);
+
+  // Update streak (with streak freeze support)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayStr = today.toISOString().split("T")[0];
-  const streakResult = updateStreak(profile.last_study_date);
+  const streakResult = updateStreak(profile.last_study_date, {
+    tier: profile.tier,
+    streak_freezes_remaining: freezeRefill.shouldRefill ? 2 : profile.streak_freezes_remaining,
+    current_streak: profile.current_streak,
+  });
 
   let newStreak = profile.current_streak;
   if (streakResult.newStreak === 1) {
     // Streak broken or first day
     newStreak = 1;
   } else if (streakResult.streakContinued && profile.last_study_date !== todayStr) {
-    // Studied yesterday, continuing streak
+    // Studied yesterday (or freeze saved), continuing streak
     newStreak = profile.current_streak + 1;
   }
   // If already studied today, streak stays the same
 
   const newLongestStreak = Math.max(profile.longest_streak, newStreak);
 
-  // Update profile
+  // Calculate streak freezes remaining
+  let freezesRemaining = freezeRefill.shouldRefill ? 2 : profile.streak_freezes_remaining;
+  if (streakResult.freezeUsed) {
+    freezesRemaining = Math.max(0, freezesRemaining - 1);
+  }
+
+  // Daily goal tracking
+  const activityMinutes = getMinutesForActivity(action);
+  let dailyProgress = profile.daily_goal_progress;
+  let dailyGoalDate = profile.daily_goal_date;
+  let dailyGoalJustCompleted = false;
+
+  // Reset progress if it's a new day
+  if (dailyGoalDate !== todayStr) {
+    dailyProgress = 0;
+    dailyGoalDate = todayStr;
+  }
+
+  const wasAlreadyCompleted = dailyProgress >= profile.daily_goal_minutes;
+  dailyProgress += activityMinutes;
+  const isNowCompleted = dailyProgress >= profile.daily_goal_minutes;
+
+  if (isNowCompleted && !wasAlreadyCompleted) {
+    dailyGoalJustCompleted = true;
+  }
+
+  // Build profile update
+  const profileUpdate: Record<string, unknown> = {
+    xp: dailyGoalJustCompleted ? newXp + 25 : newXp, // +25 XP bonus for daily goal
+    level: dailyGoalJustCompleted ? calculateLevel(newXp + 25) : newLevel,
+    current_streak: newStreak,
+    longest_streak: newLongestStreak,
+    last_study_date: todayStr,
+    daily_goal_progress: dailyProgress,
+    daily_goal_date: dailyGoalDate,
+    streak_freezes_remaining: freezesRemaining,
+  };
+
+  if (freezeRefill.shouldRefill) {
+    profileUpdate.streak_freezes_reset_at = freezeRefill.newResetAt;
+  }
+
   await supabase
     .from("profiles")
-    .update({
-      xp: newXp,
-      level: newLevel,
-      current_streak: newStreak,
-      longest_streak: newLongestStreak,
-      last_study_date: todayStr,
-    } as never)
+    .update(profileUpdate as never)
     .eq("id", user.id);
 
   // Record study session
@@ -96,7 +140,15 @@ export async function POST(req: Request) {
     flashcardSessionCount: rpcStats?.flashcard_session_count ?? 0,
     perfectQuizCount: rpcStats?.perfect_quiz_count ?? 0,
     currentStreak: newStreak,
-    level: newLevel,
+    level: dailyGoalJustCompleted ? calculateLevel(newXp + 25) : newLevel,
+    // Extended stats
+    chatMessageCount: rpcStats?.chat_message_count ?? 0,
+    totalFlashcardReviews: rpcStats?.total_flashcard_reviews ?? 0,
+    quizzesToday: rpcStats?.quizzes_today ?? 0,
+    flashcardReviewsThisWeek: rpcStats?.flashcard_reviews_this_week ?? 0,
+    consecutiveHighScores: rpcStats?.consecutive_high_scores ?? 0,
+    distinctCoursesUsed: rpcStats?.distinct_courses_used ?? 0,
+    currentHour: new Date().getHours(),
   };
 
   // Get existing achievements
@@ -139,7 +191,8 @@ export async function POST(req: Request) {
 
       // Add achievement bonus XP
       if (bonusXp > 0) {
-        const totalXp = newXp + bonusXp;
+        const currentXp = dailyGoalJustCompleted ? newXp + 25 : newXp;
+        const totalXp = currentXp + bonusXp;
         await supabase
           .from("profiles")
           .update({ xp: totalXp, level: calculateLevel(totalXp) } as never)
@@ -148,12 +201,18 @@ export async function POST(req: Request) {
     }
   }
 
+  const finalXp = dailyGoalJustCompleted ? newXp + 25 : newXp;
+
   return NextResponse.json({
-    xp_earned: xpEarned,
-    total_xp: newXp,
-    level: newLevel,
+    xp_earned: xpEarned + (dailyGoalJustCompleted ? 25 : 0),
+    total_xp: finalXp,
+    level: calculateLevel(finalXp),
     leveled_up: leveledUp,
     streak: newStreak,
+    streak_freeze_used: streakResult.freezeUsed,
+    daily_goal_completed: dailyGoalJustCompleted,
+    daily_goal_progress: dailyProgress,
+    daily_goal_target: profile.daily_goal_minutes,
     new_achievements: newAchievements,
   });
 }

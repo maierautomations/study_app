@@ -8,7 +8,7 @@ StudyApp is an AI-powered exam preparation web app for German-speaking universit
 
 ## Current Status
 
-**Phases 1-3, A, B, C, D, E are complete. Quick Wins (14/14) and Wichtig (13/13) from IMPROVEMENT_PLAN.md are done. New Feature Roadmap Phases 1-3 (8/21) are complete. Next: Phase 4 (Gamification), Phase 5 (Advanced AI), Phase 6 (UX Polish), then Phase F (Stripe, Deployment).**
+**Phases 1-5, A, B, C, D, E are complete. Quick Wins (14/14) and Wichtig (13/13) from IMPROVEMENT_PLAN.md are done. New Feature Roadmap Phases 1-5 (14/21) are complete. Next: Phase 6 (UX Polish), then Phase F (Stripe, Deployment).**
 
 See `ROADMAP.md` for the full feature roadmap, `PLAN.md` for architectural details, and `IMPROVEMENT_PLAN.md` for the prioritized improvement list.
 
@@ -41,7 +41,7 @@ See `ROADMAP.md` for the full feature roadmap, `PLAN.md` for architectural detai
 - **Browser client**: `src/lib/supabase/client.ts` — use in client components
 - **Server client**: `src/lib/supabase/server.ts` — use in Server Components and API routes (async, uses `cookies()`)
 - **Middleware**: `src/middleware.ts` delegates to `src/lib/supabase/middleware.ts` for session refresh and route protection
-- **Database types**: `src/types/database.ts` — manually maintained typed schema matching `supabase/migrations/00001_initial_schema.sql`, `00002_gamification.sql`, `00003_document_summary.sql`, `00004_exam_simulator.sql`, and `00005_glossary_column.sql`
+- **Database types**: `src/types/database.ts` — manually maintained typed schema matching `supabase/migrations/00001_initial_schema.sql` through `00010_extended_user_stats_rpc.sql`
 - All tables use **Row Level Security (RLS)** — data is scoped to `auth.uid()`. Child tables (chunks, questions, flashcards) use `exists` subqueries to verify ownership through parent tables.
 - A trigger `handle_new_user()` auto-creates a profile row on signup.
 - Storage bucket `documents` uses folder-based RLS: files stored at `{user_id}/{filename}`.
@@ -192,6 +192,47 @@ The course detail page (`/dashboard/courses/[courseId]`) uses client-side tabs (
 - "Weiter lernen" or "Session beenden" buttons
 - Session complete summary now includes rating distribution (Nochmal/Schwer/Gut/Einfach counts)
 - `showBatchBreak`, `ratingCounts` state in review session
+
+### Daily Learning Goal (Phase 4.1)
+- Configurable daily goal: Locker (10min), Normal (20min), Intensiv (40min), or custom
+- Dashboard card with SVG circular progress ring, shows percentage or checkmark when complete
+- Settings: `src/components/settings/learning-goal-section.tsx`
+- Dashboard: `src/components/gamification/daily-goal-card.tsx`
+- Activity minutes tracked per action (quiz=10, flashcard_review=2, chat=5, document_upload=3, exam=15)
+- +25 XP bonus on daily goal completion with confetti
+- DB: `profiles.daily_goal_minutes`, `daily_goal_progress`, `daily_goal_date`
+- Migration: `supabase/migrations/00008_daily_goal_streak_freeze.sql`
+
+### Streak Freeze (Phase 4.2, Pro only)
+- Pro users get 2 freezes/month, auto-consumed when missing exactly 1 day
+- Snowflake icon in streak display when Pro user has freezes
+- Toast notification "Streak-Freeze hat deine Serie gerettet!"
+- Refill to 2 every 30 days for premium users
+- DB: `profiles.streak_freezes_remaining`, `streak_freezes_reset_at`
+
+### More Achievements 20+ (Phase 4.3)
+- Extended from 12 to 23 achievements
+- 11 new: quiz_marathon, flawless, card_king, diligent_learner, half_year_streak, curious, explorer, expert, night_owl, early_bird, all_generator
+- Extended `get_user_stats` RPC with additional stats for achievement checks
+- Migration: `supabase/migrations/00009_more_achievements.sql`, `00010_extended_user_stats_rpc.sql`
+
+### Focus Area for AI Generation (Phase 5.1)
+- Optional "Fokusbereich" text field on quiz and flashcard generation pages
+- User enters e.g. "Kapitel 3" or "NLP" → AI focuses on that area
+- `focusArea` added to `quizGenerateSchema` and `flashcardGenerateSchema` in `src/lib/validations.ts`
+
+### Knowledge Level Check (Phase 5.2)
+- "Wissensstand testen" in Fortschritt tab of course detail
+- `POST /api/quiz/knowledge-check` — generates 5 MC questions (easy→hard), returns assessment
+- `src/components/quiz/knowledge-check.tsx` — interactive question navigation, results with level + recommendations
+- Freemium-checked + rate-limited, costs 1 AI generation
+
+### Smart Review Memory Aids (Phase 5.3)
+- After 2x "Nochmal" on a card in review session, "KI-Merkhilfe erstellen" button appears on card back
+- `POST /api/flashcards/memory-aid` — generates alternative_explanation, example, mnemonic
+- Collapsible display under answer content with Lightbulb icon
+- Freemium-checked + rate-limited, costs 1 AI generation
+- `nochmalCounts`, `memoryAids` state tracking per card ID in review session
 
 ## Key Conventions
 

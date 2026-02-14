@@ -12,10 +12,14 @@ import {
   CheckCircle2,
   Layers,
   ArrowLeftRight,
+  Lightbulb,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import Link from "next/link";
 import { trackActivity } from "@/lib/gamification-client";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
+import { toast } from "sonner";
 import { EditFlashcardDialog } from "@/components/flashcard/flashcard-editor";
 import { QUALITY_LABELS, type ReviewQuality } from "@/lib/spaced-repetition";
 
@@ -45,7 +49,14 @@ const QUALITY_BUTTONS: {
   { quality: 5, label: QUALITY_LABELS[5], variant: "default", description: "Sofort gewusst" },
 ];
 
+type MemoryAid = {
+  alternative_explanation: string;
+  example: string;
+  mnemonic: string;
+};
+
 const MAX_CARDS_PER_SESSION = 20;
+const NOCHMAL_THRESHOLD = 2; // Show memory aid button after 2x "Nochmal"
 
 interface ReviewSessionProps {
   courseId: string;
@@ -70,6 +81,10 @@ export function ReviewSession({
   const [reversed, setReversed] = useState(false);
   const [showBatchBreak, setShowBatchBreak] = useState(false);
   const [ratingCounts, setRatingCounts] = useState<Record<number, number>>({ 1: 0, 3: 0, 4: 0, 5: 0 });
+  const [nochmalCounts, setNochmalCounts] = useState<Record<string, number>>({});
+  const [memoryAids, setMemoryAids] = useState<Record<string, MemoryAid>>({});
+  const [loadingMemoryAid, setLoadingMemoryAid] = useState<string | null>(null);
+  const [expandedMemoryAid, setExpandedMemoryAid] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchDueCards() {
@@ -127,9 +142,13 @@ export function ReviewSession({
         setReviewedCount((prev) => prev + 1);
         setRatingCounts((prev) => ({ ...prev, [quality]: (prev[quality] ?? 0) + 1 }));
 
-        // If "Nochmal", add card to again queue
+        // If "Nochmal", add card to again queue and track count
         if (quality === 1) {
           setAgainCards((prev) => [...prev, currentCard]);
+          setNochmalCounts((prev) => ({
+            ...prev,
+            [currentCard.id]: (prev[currentCard.id] ?? 0) + 1,
+          }));
         }
 
         // Check for batch break every 10 cards
@@ -191,6 +210,33 @@ export function ReviewSession({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isFlipped, sessionComplete, loading, handleFlip, handleRate]);
+
+  async function fetchMemoryAid(card: DueCard) {
+    if (memoryAids[card.id] || loadingMemoryAid === card.id) return;
+    setLoadingMemoryAid(card.id);
+    try {
+      const res = await fetch("/api/flashcards/memory-aid", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          flashcardId: card.id,
+          front: card.front,
+          back: card.back,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Merkhilfe konnte nicht erstellt werden");
+        return;
+      }
+      setMemoryAids((prev) => ({ ...prev, [card.id]: data }));
+      setExpandedMemoryAid(card.id);
+    } catch {
+      toast.error("Merkhilfe konnte nicht erstellt werden");
+    } finally {
+      setLoadingMemoryAid(null);
+    }
+  }
 
   if (loading) {
     return (
@@ -382,7 +428,7 @@ export function ReviewSession({
 
           {/* Back */}
           <Card
-            className="absolute inset-0 flex items-center justify-center p-8"
+            className="absolute inset-0 flex flex-col items-center justify-center p-8 overflow-y-auto"
             style={{
               backfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
@@ -396,6 +442,69 @@ export function ReviewSession({
                 <MarkdownRenderer content={reversed ? currentCard.front : currentCard.back} className="text-lg" compact />
               )}
             </div>
+
+            {/* Memory Aid section */}
+            {currentCard && (nochmalCounts[currentCard.id] ?? 0) >= NOCHMAL_THRESHOLD && (
+              <div className="w-full mt-4 border-t pt-3" onClick={(e) => e.stopPropagation()}>
+                {memoryAids[currentCard.id] ? (
+                  <div>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1.5 text-xs text-primary hover:underline mx-auto mb-2"
+                      onClick={() =>
+                        setExpandedMemoryAid((prev) =>
+                          prev === currentCard.id ? null : currentCard.id
+                        )
+                      }
+                    >
+                      <Lightbulb className="h-3.5 w-3.5" />
+                      KI-Merkhilfe
+                      {expandedMemoryAid === currentCard.id ? (
+                        <ChevronUp className="h-3 w-3" />
+                      ) : (
+                        <ChevronDown className="h-3 w-3" />
+                      )}
+                    </button>
+                    {expandedMemoryAid === currentCard.id && (
+                      <div className="text-left space-y-2 text-xs bg-muted/50 rounded-lg p-3">
+                        <div>
+                          <p className="font-medium text-primary">Alternative Erklärung</p>
+                          <p className="text-muted-foreground">{memoryAids[currentCard.id].alternative_explanation}</p>
+                        </div>
+                        <div>
+                          <p className="font-medium text-primary">Beispiel</p>
+                          <p className="text-muted-foreground">{memoryAids[currentCard.id].example}</p>
+                        </div>
+                        <div>
+                          <p className="font-medium text-primary">Eselsbrücke</p>
+                          <p className="text-muted-foreground">{memoryAids[currentCard.id].mnemonic}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs mx-auto flex"
+                    disabled={loadingMemoryAid === currentCard.id}
+                    onClick={() => fetchMemoryAid(currentCard)}
+                  >
+                    {loadingMemoryAid === currentCard.id ? (
+                      <>
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        Merkhilfe wird erstellt...
+                      </>
+                    ) : (
+                      <>
+                        <Lightbulb className="mr-1.5 h-3.5 w-3.5" />
+                        KI-Merkhilfe erstellen
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            )}
           </Card>
         </div>
       </div>

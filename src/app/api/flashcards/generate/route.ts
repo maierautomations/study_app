@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
-  const { courseId, documentIds, title, count } = parsed.data;
+  const { courseId, documentIds, title, count, focusArea } = parsed.data;
 
   // Verify course ownership
   const { data: courseRaw } = await supabase
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       prompt: `Du bist ein Experte für die Erstellung von Lernkarten (Flashcards) für deutschsprachige Universitätskurse.
 
 Basierend auf dem folgenden Lernmaterial, erstelle genau ${cardCount} Flashcards.
-
+${focusArea ? `\nFOKUSBEREICH: Konzentriere dich besonders auf das Thema "${focusArea}". Erstelle die meisten Karten zu diesem Bereich.\n` : ""}
 REGELN:
 - Jede Karte hat eine Vorderseite (Frage/Begriff) und eine Rückseite (Antwort/Definition)
 - Die Vorderseite sollte kurz und prägnant sein

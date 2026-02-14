@@ -40,6 +40,7 @@ export default function NewQuizPage() {
     true_false: true,
     free_text: true,
   });
+  const [focusArea, setFocusArea] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingDocs, setLoadingDocs] = useState(true);
 
@@ -107,6 +108,7 @@ export default function NewQuizPage() {
           questionCount: parseInt(questionCount),
           questionTypes: selectedTypes,
           title: title.trim() || undefined,
+          focusArea: focusArea.trim() || undefined,
         }),
       });
 
@@ -152,6 +154,20 @@ export default function NewQuizPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="focus-area">Fokusbereich (optional)</Label>
+          <Input
+            id="focus-area"
+            placeholder="z.B. Kapitel 3, NLP, Lineare Algebra..."
+            value={focusArea}
+            onChange={(e) => setFocusArea(e.target.value)}
+            maxLength={200}
+          />
+          <p className="text-xs text-muted-foreground">
+            Die KI konzentriert sich auf diesen Bereich.
+          </p>
         </div>
 
         <div className="space-y-2">

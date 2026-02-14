@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
-  const { courseId, documentIds, difficulty, questionCount, questionTypes, title } = parsed.data;
+  const { courseId, documentIds, difficulty, questionCount, questionTypes, title, focusArea } = parsed.data;
 
   // Verify course ownership
   const { data: courseRaw } = await supabase
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
       prompt: `Du bist ein Experte für die Erstellung von Prüfungsfragen für deutschsprachige Universitätskurse.
 
 Basierend auf dem folgenden Lernmaterial, erstelle genau ${questionCount} Quizfragen.
-
+${focusArea ? `\nFOKUSBEREICH: Konzentriere dich besonders auf das Thema "${focusArea}". Erstelle die meisten Fragen zu diesem Bereich.\n` : ""}
 ${difficultyPrompt}
 
 ${getQuestionTypesPrompt(questionTypes)}

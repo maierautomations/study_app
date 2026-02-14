@@ -1,6 +1,6 @@
 # StudyApp — Verbesserungs- & Feature-Plan
 
-> Erstellt: 2026-02-13 | Aktualisiert: 2026-02-14 | Status: Phasen 1-3 abgeschlossen (8/21) | Kontext: Nach Quick Wins + Wichtig, neue Feature-Roadmap
+> Erstellt: 2026-02-13 | Aktualisiert: 2026-02-14 | Status: Phasen 1-5 abgeschlossen (14/21) | Kontext: Nach Quick Wins + Wichtig, neue Feature-Roadmap
 
 ## Context
 
@@ -113,23 +113,18 @@ Die App ist feature-complete (Phasen 1-3, A-E). Quick Wins (14/14) und Wichtig-I
 
 #### 4.1 Tägliches Lernziel
 **Beschreibung:** Konfigurierbares Tagesziel (Locker/Normal/Intensiv/Custom). Dashboard-Karte mit Fortschrittsring. Konfetti + XP-Bonus bei Erreichen. Streak-Integration.
-**Dateien:** Neue Migration (daily_goal Spalten), Settings, Dashboard, Sidebar
-**Status:** ⬜ Ausstehend
+**Dateien:** `supabase/migrations/00008_daily_goal_streak_freeze.sql`, `src/components/gamification/daily-goal-card.tsx`, `src/components/settings/learning-goal-section.tsx`, Dashboard, Gamification-API
+**Status:** ✅ Erledigt
 
 #### 4.2 Streak-Freeze (Pro)
 **Beschreibung:** Pro-Nutzer erhalten 2 Freezes/Monat. Auto-Verbrauch bei verpasstem Tag. Eis-Icon im Streak-Bereich. Notification "Streak-Freeze hat Serie gerettet!"
-**Dateien:** Migration, `gamification.ts`, Gamification-API
-**Status:** ⬜ Ausstehend
+**Dateien:** Migration 00008, `gamification.ts`, Gamification-API, `streak-display.tsx`
+**Status:** ✅ Erledigt
 
 #### 4.3 Mehr Achievements (auf 20+)
-**Beschreibung:** Erweiterung von 12 auf 20+ Achievements:
-- Quizzes: Quiz-Marathon (5/Tag), Fehlerlos (3x 90%+)
-- Flashcards: Kartenkönig (100/Woche), Alle gewusst (Set ohne Nochmal), Fleißiger Lerner (500 Reviews)
-- Streaks: Halbjahresziel (100 Tage)
-- Chat: Wissbegierig (20 Nachrichten), Forscher (3 Kurse)
-- Allgemein: Experte (Level 10), Nachtlerner (22-06 Uhr), Frühaufsteher (vor 08:00), Alles-Generierer
-**Dateien:** Neue Migration (INSERT), `gamification.ts`, Achievement-Check-Logik
-**Status:** ⬜ Ausstehend
+**Beschreibung:** Erweiterung von 12 auf 23 Achievements. 11 neue: quiz_marathon, flawless, card_king, diligent_learner, half_year_streak, curious, explorer, expert, night_owl, early_bird, all_generator.
+**Dateien:** `supabase/migrations/00009_more_achievements.sql`, `00010_extended_user_stats_rpc.sql`, `gamification.ts`, `achievement-badge.tsx`
+**Status:** ✅ Erledigt
 
 ---
 
@@ -137,15 +132,18 @@ Die App ist feature-complete (Phasen 1-3, A-E). Quick Wins (14/14) und Wichtig-I
 
 #### 5.1 Kapitel-basierte KI-Generierung (Fokusbereich)
 **Beschreibung:** Optionales "Fokusbereich"-Textfeld bei Quiz- und Flashcard-Generierung. Nutzer gibt z.B. "Kapitel 3" oder "Thema: NLP" ein. KI fokussiert auf diesen Bereich.
-**Status:** ⬜ Ausstehend
+**Dateien:** `src/lib/validations.ts`, Quiz/Flashcard generate APIs + new pages
+**Status:** ✅ Erledigt
 
 #### 5.2 Wissensstand-Check (Einstiegsdiagnose)
-**Beschreibung:** Button "Wissensstand testen" auf Kurs-Dokumentenseite. 5 MC-Fragen (leicht-schwer). Einschätzung des Niveaus mit Empfehlungen. Im Fortschritts-Tab als "Einstiegsniveau". Kostet 1 KI-Generierung.
-**Status:** ⬜ Ausstehend
+**Beschreibung:** Button "Wissensstand testen" im Fortschritts-Tab. 5 MC-Fragen (leicht→schwer). Interaktive Frage-für-Frage-Navigation. Einschätzung (Einsteiger/Fortgeschritten/Experte) mit Lernempfehlungen. Kostet 1 KI-Generierung.
+**Dateien:** `src/app/api/quiz/knowledge-check/route.ts`, `src/components/quiz/knowledge-check.tsx`, `src/components/course/course-detail.tsx`
+**Status:** ✅ Erledigt
 
 #### 5.3 Smart Review – KI-Merkhilfen
-**Beschreibung:** Nach 3x "Nochmal" bei einer Karte: Angebot "KI-Merkhilfe erstellen". Alternative Erklärung, Beispiel, Eselsbrücke. Einklappbar unter Original-Antwort. Kostet 1 KI-Generierung.
-**Status:** ⬜ Ausstehend
+**Beschreibung:** Nach 2x "Nochmal" bei einer Karte: Button "KI-Merkhilfe erstellen" auf der Rückseite. Alternative Erklärung, Beispiel, Eselsbrücke. Einklappbar unter Original-Antwort. Kostet 1 KI-Generierung.
+**Dateien:** `src/app/api/flashcards/memory-aid/route.ts`, `src/components/flashcard/review-session.tsx`
+**Status:** ✅ Erledigt
 
 ---
 
@@ -201,12 +199,12 @@ Die App ist feature-complete (Phasen 1-3, A-E). Quick Wins (14/14) und Wichtig-I
 | 6  | Manuelle Flashcard + Edit             | 3.3   | ✅     |
 | 7  | Flashcard-Umkehrung                   | 3.4   | ✅     |
 | 8  | Flashcard-Reviews Pagination          | 3.5   | ✅     |
-| 9  | Tägliches Lernziel                    | 4.1   | ⬜     |
-| 10 | Streak-Freeze Pro                     | 4.2   | ⬜     |
-| 11 | Mehr Achievements 20+                 | 4.3   | ⬜     |
-| 12 | Kapitel-basierte KI-Generierung       | 5.1   | ⬜     |
-| 13 | Wissensstand-Check                    | 5.2   | ⬜     |
-| 14 | Smart Review KI-Merkhilfen            | 5.3   | ⬜     |
+| 9  | Tägliches Lernziel                    | 4.1   | ✅     |
+| 10 | Streak-Freeze Pro                     | 4.2   | ✅     |
+| 11 | Mehr Achievements 20+                 | 4.3   | ✅     |
+| 12 | Kapitel-basierte KI-Generierung       | 5.1   | ✅     |
+| 13 | Wissensstand-Check                    | 5.2   | ✅     |
+| 14 | Smart Review KI-Merkhilfen            | 5.3   | ✅     |
 | 15 | Accessibility                         | 6.1   | ⬜     |
 | 16 | Globaler Fortschrittsüberblick        | 6.2   | ⬜     |
 | 17 | Pomodoro-Timer                        | 6.3   | ⬜     |

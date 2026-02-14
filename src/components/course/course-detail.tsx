@@ -34,6 +34,7 @@ import { GlossaryView } from "@/components/document/glossary-view";
 import { DeleteDocumentDialog } from "@/components/document/delete-document-dialog";
 import { CreateFlashcardDialog } from "@/components/flashcard/flashcard-editor";
 import { WeaknessChart } from "@/components/progress/weakness-chart";
+import { KnowledgeCheck } from "@/components/quiz/knowledge-check";
 import type { Course, Document, Quiz, FlashcardSet } from "@/types/database";
 
 interface CourseDetailProps {
@@ -588,7 +589,11 @@ export function CourseDetail({
           </Card>
         </TabsContent>
 
-        <TabsContent value="progress" className="mt-6">
+        <TabsContent value="progress" className="mt-6 space-y-6">
+          <KnowledgeCheck
+            courseId={course.id}
+            hasDocuments={documents.some((d) => d.status === "ready")}
+          />
           <WeaknessChart
             courseId={course.id}
             documents={documents

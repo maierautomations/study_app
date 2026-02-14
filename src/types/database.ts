@@ -22,6 +22,11 @@ export type Database = {
           longest_streak: number;
           last_study_date: string | null;
           onboarding_completed: boolean;
+          daily_goal_minutes: number;
+          daily_goal_progress: number;
+          daily_goal_date: string | null;
+          streak_freezes_remaining: number;
+          streak_freezes_reset_at: string;
           created_at: string;
           updated_at: string;
         };
@@ -37,6 +42,11 @@ export type Database = {
           longest_streak?: number;
           last_study_date?: string | null;
           onboarding_completed?: boolean;
+          daily_goal_minutes?: number;
+          daily_goal_progress?: number;
+          daily_goal_date?: string | null;
+          streak_freezes_remaining?: number;
+          streak_freezes_reset_at?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -52,6 +62,11 @@ export type Database = {
           longest_streak?: number;
           last_study_date?: string | null;
           onboarding_completed?: boolean;
+          daily_goal_minutes?: number;
+          daily_goal_progress?: number;
+          daily_goal_date?: string | null;
+          streak_freezes_remaining?: number;
+          streak_freezes_reset_at?: string;
           created_at?: string;
           updated_at?: string;
         };

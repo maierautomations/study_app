@@ -16,6 +16,7 @@ import Link from "next/link";
 import { XpProgress } from "@/components/gamification/xp-progress";
 import { StreakDisplay } from "@/components/gamification/streak-display";
 import { AchievementBadge } from "@/components/gamification/achievement-badge";
+import { DailyGoalCard } from "@/components/gamification/daily-goal-card";
 import { OnboardingCheck } from "@/components/onboarding/onboarding-check";
 import type { Profile, StudySession, UserAchievement, Achievement } from "@/types/database";
 
@@ -66,6 +67,11 @@ export default async function DashboardPage() {
 
   const displayName = profile?.display_name || "Studierende/r";
 
+  // Daily goal: reset progress if not today
+  const todayStr = new Date().toISOString().split("T")[0];
+  const dailyProgress = profile?.daily_goal_date === todayStr ? (profile?.daily_goal_progress ?? 0) : 0;
+  const dailyGoalTarget = profile?.daily_goal_minutes ?? 20;
+
   const ACTIVITY_LABELS: Record<string, string> = {
     quiz_complete: "Quiz abgeschlossen",
     perfect_quiz: "Perfektes Quiz",
@@ -91,7 +97,11 @@ export default async function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-6">
-          <StreakDisplay streak={profile?.current_streak ?? 0} />
+          <StreakDisplay
+            streak={profile?.current_streak ?? 0}
+            freezesRemaining={profile?.streak_freezes_remaining}
+            isPro={profile?.tier === "premium"}
+          />
           <Button asChild>
             <Link href="/dashboard/courses">
               <Plus className="mr-2 h-4 w-4" />
@@ -101,12 +111,15 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* XP Progress */}
-      <Card>
-        <CardContent className="pt-6">
-          <XpProgress xp={profile?.xp ?? 0} />
-        </CardContent>
-      </Card>
+      {/* XP Progress + Daily Goal */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardContent className="pt-6">
+            <XpProgress xp={profile?.xp ?? 0} />
+          </CardContent>
+        </Card>
+        <DailyGoalCard progress={dailyProgress} target={dailyGoalTarget} />
+      </div>
 
       {/* Stats cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

@@ -4,6 +4,7 @@ import { ProfileSection } from "@/components/settings/profile-section";
 import { AppearanceSection } from "@/components/settings/appearance-section";
 import { SecuritySection } from "@/components/settings/security-section";
 import { SubscriptionSection } from "@/components/settings/subscription-section";
+import { LearningGoalSection } from "@/components/settings/learning-goal-section";
 import { DangerSection } from "@/components/settings/danger-section";
 import type { Profile } from "@/types/database";
 
@@ -36,6 +37,8 @@ export default async function SettingsPage() {
         email={user.email ?? ""}
         tier={profile?.tier ?? "free"}
       />
+
+      <LearningGoalSection currentGoal={profile?.daily_goal_minutes ?? 20} />
 
       <AppearanceSection />
 

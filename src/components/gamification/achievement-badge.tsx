@@ -12,6 +12,15 @@ import {
   Layers,
   Flame,
   TrendingUp,
+  Zap,
+  Award,
+  Crown,
+  MessageCircle,
+  Compass,
+  Medal,
+  Moon,
+  Sunrise,
+  Sparkles,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
@@ -27,6 +36,15 @@ const ICON_MAP: Record<string, React.ElementType> = {
   layers: Layers,
   flame: Flame,
   "trending-up": TrendingUp,
+  zap: Zap,
+  award: Award,
+  crown: Crown,
+  "message-circle": MessageCircle,
+  compass: Compass,
+  medal: Medal,
+  moon: Moon,
+  sunrise: Sunrise,
+  sparkles: Sparkles,
 };
 
 export function AchievementBadge({

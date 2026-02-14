@@ -34,6 +34,7 @@ export default function NewFlashcardsPage() {
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [count, setCount] = useState("20");
+  const [focusArea, setFocusArea] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingDocs, setLoadingDocs] = useState(true);
 
@@ -85,6 +86,7 @@ export default function NewFlashcardsPage() {
           documentIds: selectedDocIds,
           title: title.trim() || undefined,
           count: parseInt(count),
+          focusArea: focusArea.trim() || undefined,
         }),
       });
 
@@ -134,6 +136,20 @@ export default function NewFlashcardsPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="fc-focus-area">Fokusbereich (optional)</Label>
+          <Input
+            id="fc-focus-area"
+            placeholder="z.B. Kapitel 3, NLP, Lineare Algebra..."
+            value={focusArea}
+            onChange={(e) => setFocusArea(e.target.value)}
+            maxLength={200}
+          />
+          <p className="text-xs text-muted-foreground">
+            Die KI konzentriert sich auf diesen Bereich.
+          </p>
         </div>
 
         <div className="space-y-2">

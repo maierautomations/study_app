@@ -1,15 +1,20 @@
 "use client";
 
-import { Flame } from "lucide-react";
+import { Flame, Snowflake } from "lucide-react";
 
 export function StreakDisplay({
   streak,
   compact = false,
+  freezesRemaining,
+  isPro = false,
 }: {
   streak: number;
   compact?: boolean;
+  freezesRemaining?: number;
+  isPro?: boolean;
 }) {
   const isActive = streak > 0;
+  const showFreezes = isPro && freezesRemaining !== undefined;
 
   if (compact) {
     return (
@@ -20,6 +25,9 @@ export function StreakDisplay({
         <span className={isActive ? "font-medium" : "text-muted-foreground"}>
           {streak}
         </span>
+        {showFreezes && freezesRemaining > 0 && (
+          <Snowflake className="h-3 w-3 text-blue-400" />
+        )}
       </div>
     );
   }
@@ -46,6 +54,12 @@ export function StreakDisplay({
             ? "Weiter so!"
             : "Lerne heute, um eine Serie zu starten!"}
         </p>
+        {showFreezes && (
+          <p className="text-xs text-blue-400 flex items-center gap-1 mt-0.5">
+            <Snowflake className="h-3 w-3" />
+            {freezesRemaining} Streak-Freeze{freezesRemaining !== 1 ? "s" : ""} übrig
+          </p>
+        )}
       </div>
     </div>
   );

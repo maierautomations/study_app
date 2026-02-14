@@ -15,6 +15,7 @@ export const quizGenerateSchema = z.object({
     .array(z.enum(["multiple_choice", "true_false", "free_text"]))
     .optional(),
   title: z.string().optional(),
+  focusArea: z.string().max(200).optional(),
 });
 
 // Flashcard generation
@@ -23,6 +24,7 @@ export const flashcardGenerateSchema = z.object({
   documentIds: z.array(documentId).min(1, "Mindestens ein Dokument erforderlich"),
   count: z.number().int().min(1).max(50).default(20),
   title: z.string().optional(),
+  focusArea: z.string().max(200).optional(),
 });
 
 // Chat (messages are UIMessage format from AI SDK, validated loosely)
