@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { trackActivity } from "@/lib/gamification-client";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import type { ChatMessage } from "@/types/database";
 import type { UIMessage } from "ai";
 
@@ -275,9 +276,15 @@ function ChatInterface({
                   : "bg-muted"
               }`}
             >
-              <div className="text-sm whitespace-pre-wrap prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-                {getMessageText(message)}
-              </div>
+              <MarkdownRenderer
+                content={getMessageText(message)}
+                className={
+                  message.role === "user"
+                    ? "prose-invert text-primary-foreground [&_code]:bg-white/20 [&_code]:text-primary-foreground"
+                    : ""
+                }
+                compact
+              />
               {message.role === "assistant" && (
                 <div className="flex justify-end mt-1">
                   <CopyButton text={getMessageText(message)} />

@@ -16,9 +16,12 @@ import {
   XCircle,
   Trophy,
   RotateCcw,
+  Bot,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { trackActivity } from "@/lib/gamification-client";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import type { Quiz, QuizQuestion, QuizQuestionOption } from "@/types/database";
 
 type Answer = {
@@ -37,6 +40,7 @@ export default function QuizPlayPage() {
 
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [allQuestions, setAllQuestions] = useState<QuizQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [freeTextAnswer, setFreeTextAnswer] = useState("");
@@ -44,6 +48,10 @@ export default function QuizPlayPage() {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [reviewMode, setReviewMode] = useState(false);
+  const [reviewTotal, setReviewTotal] = useState(0);
+  const [deepExplanations, setDeepExplanations] = useState<Record<string, string>>({});
+  const [loadingExplanation, setLoadingExplanation] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchQuiz() {
@@ -59,7 +67,10 @@ export default function QuizPlayPage() {
       const questionsData = questionsDataRaw as unknown as QuizQuestion[] | null;
 
       if (quizData) setQuiz(quizData);
-      if (questionsData) setQuestions(questionsData);
+      if (questionsData) {
+        setQuestions(questionsData);
+        setAllQuestions(questionsData);
+      }
       setLoading(false);
     }
     fetchQuiz();
@@ -161,6 +172,57 @@ export default function QuizPlayPage() {
     setShowResult(false);
     setAnswers([]);
     setQuizCompleted(false);
+    setReviewMode(false);
+    setReviewTotal(0);
+    setQuestions(allQuestions);
+  }
+
+  function startReviewMode() {
+    const wrongQuestionIds = answers
+      .filter((a) => !a.isCorrect)
+      .map((a) => a.questionId);
+    const wrongQuestions = questions.filter((q) =>
+      wrongQuestionIds.includes(q.id)
+    );
+    if (wrongQuestions.length === 0) return;
+    setReviewMode(true);
+    setReviewTotal(wrongQuestions.length);
+    setQuestions(wrongQuestions);
+    setCurrentIndex(0);
+    setSelectedAnswer(null);
+    setFreeTextAnswer("");
+    setShowResult(false);
+    setAnswers([]);
+    setQuizCompleted(false);
+  }
+
+  async function requestDeepExplanation(question: QuizQuestion, selectedAnswer: string) {
+    if (loadingExplanation || deepExplanations[question.id]) return;
+    setLoadingExplanation(question.id);
+    try {
+      const res = await fetch("/api/quiz/explain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          questionText: question.question_text,
+          correctAnswer: question.correct_answer,
+          selectedAnswer,
+          explanation: question.explanation,
+          courseId,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Fehler" }));
+        toast.error(err.error || "Erklärung konnte nicht geladen werden.");
+        return;
+      }
+      const data = await res.json();
+      setDeepExplanations((prev) => ({ ...prev, [question.id]: data.explanation }));
+    } catch {
+      toast.error("Verbindungsfehler");
+    } finally {
+      setLoadingExplanation(null);
+    }
   }
 
   if (loading) {
@@ -186,14 +248,23 @@ export default function QuizPlayPage() {
     const correctCount = answers.filter((a) => a.isCorrect).length;
     const score = Math.round((correctCount / questions.length) * 100);
 
+    const wrongCount = questions.length - correctCount;
+
     return (
       <div className="p-6 space-y-6 max-w-2xl mx-auto">
         <Card>
           <CardContent className="flex flex-col items-center py-12">
+            {reviewMode && (
+              <Badge variant="secondary" className="mb-4">
+                Review-Modus: {reviewTotal} Fragen wiederholt
+              </Badge>
+            )}
             <Trophy
               className={`h-16 w-16 mb-4 ${score >= 70 ? "text-yellow-500" : "text-muted-foreground"}`}
             />
-            <h2 className="text-2xl font-bold mb-2">Quiz abgeschlossen!</h2>
+            <h2 className="text-2xl font-bold mb-2">
+              {reviewMode ? "Review abgeschlossen!" : "Quiz abgeschlossen!"}
+            </h2>
             <p className="text-4xl font-bold mb-1">{score}%</p>
             <p className="text-muted-foreground mb-6">
               {correctCount} von {questions.length} Fragen richtig
@@ -215,7 +286,7 @@ export default function QuizPlayPage() {
                       <XCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
                     )}
                     <div className="min-w-0">
-                      <p className="text-sm font-medium">{q.question_text}</p>
+                      <MarkdownRenderer content={q.question_text} className="text-sm font-medium" compact />
                       {!answer?.isCorrect && (
                         <p className="text-xs text-muted-foreground mt-1">
                           Richtige Antwort: {q.correct_answer}
@@ -227,7 +298,13 @@ export default function QuizPlayPage() {
               })}
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3 justify-center">
+              {wrongCount > 0 && (
+                <Button variant="destructive" onClick={startReviewMode}>
+                  <XCircle className="mr-2 h-4 w-4" />
+                  {wrongCount} Fehler wiederholen
+                </Button>
+              )}
               <Button variant="outline" onClick={restartQuiz}>
                 <RotateCcw className="mr-2 h-4 w-4" />
                 Nochmal
@@ -248,6 +325,14 @@ export default function QuizPlayPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-2xl mx-auto">
+      {reviewMode && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 text-sm">
+          <RotateCcw className="h-4 w-4 text-orange-500 shrink-0" />
+          <span className="text-orange-700 dark:text-orange-400 font-medium">
+            Review-Modus: {reviewTotal} falsch beantwortete Fragen
+          </span>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <Link
           href={`/dashboard/courses/${courseId}`}
@@ -307,7 +392,7 @@ export default function QuizPlayPage() {
             </Badge>
           </div>
           <CardTitle className="text-xl leading-relaxed">
-            {currentQuestion.question_text}
+            <MarkdownRenderer content={currentQuestion.question_text} compact />
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -390,9 +475,44 @@ export default function QuizPlayPage() {
                   </>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground">
-                {currentQuestion.explanation}
-              </p>
+              <MarkdownRenderer
+                content={currentQuestion.explanation || ""}
+                className="text-muted-foreground"
+                compact
+              />
+              {!answers[answers.length - 1]?.isCorrect && (
+                <div className="mt-3">
+                  {deepExplanations[currentQuestion.id] ? (
+                    <div className="mt-2 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                      <div className="flex items-center gap-1.5 mb-2 text-xs font-medium text-primary">
+                        <Bot className="h-3.5 w-3.5" />
+                        KI-Erklärung
+                      </div>
+                      <MarkdownRenderer content={deepExplanations[currentQuestion.id]} compact />
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                      disabled={loadingExplanation === currentQuestion.id}
+                      onClick={() =>
+                        requestDeepExplanation(
+                          currentQuestion,
+                          answers[answers.length - 1]?.selectedAnswer ?? ""
+                        )
+                      }
+                    >
+                      {loadingExplanation === currentQuestion.id ? (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Bot className="mr-1.5 h-3.5 w-3.5" />
+                      )}
+                      Ausführlich erklären
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </CardContent>

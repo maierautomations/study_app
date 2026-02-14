@@ -8,7 +8,7 @@ StudyApp is an AI-powered exam preparation web app for German-speaking universit
 
 ## Current Status
 
-**Phases 1-3, A, B, C, D, E are complete. Quick Wins from IMPROVEMENT_PLAN.md are done (14/14). Next: "Wichtig" items from IMPROVEMENT_PLAN.md, then "Nice to Have", then Phase F (Stripe, Deployment).**
+**Phases 1-3, A, B, C, D, E are complete. Quick Wins (14/14) and Wichtig (13/13) from IMPROVEMENT_PLAN.md are done. New Feature Roadmap Phases 1-3 (8/21) are complete. Next: Phase 4 (Gamification), Phase 5 (Advanced AI), Phase 6 (UX Polish), then Phase F (Stripe, Deployment).**
 
 See `ROADMAP.md` for the full feature roadmap, `PLAN.md` for architectural details, and `IMPROVEMENT_PLAN.md` for the prioritized improvement list.
 
@@ -26,6 +26,8 @@ See `ROADMAP.md` for the full feature roadmap, `PLAN.md` for architectural detai
 - **Supabase** for PostgreSQL, Auth, Storage, and pgvector (vector similarity search)
 - **Vercel AI SDK 6** (`ai` package) with multi-provider support (Anthropic Claude, OpenAI)
 - **Zod** for schema validation
+- **Zustand** for global state management (global chat store)
+- **react-markdown** + **remark-math** + **rehype-katex** for Markdown/LaTeX rendering
 
 ## Architecture
 
@@ -144,6 +146,52 @@ The course detail page (`/dashboard/courses/[courseId]`) uses client-side tabs (
 - `src/lib/analytics.ts` — `predictGrade()`: Exponentially weighted moving average of last 10 quiz scores, maps to German grade (1,0-5,0). Includes confidence level (low/medium/high based on data points and variance), trend detection (improving/stable/declining), and ±1σ grade range.
 - Displayed as "Notenprognose" card in course detail "Fortschritt" tab with large grade display, trend arrow, confidence badge.
 - No AI cost — purely algorithmic.
+
+### Markdown & LaTeX Rendering (New Feature Phase 1.1)
+- `src/components/ui/markdown-renderer.tsx` — Shared component using `react-markdown` + `remark-math` + `rehype-katex`
+- Preprocesses `\( \)` → `$ $` and `\[ \]` → `$$ $$` for KaTeX compatibility
+- Used in: Chat pages, quiz explanations, flashcard content (learn page + review session)
+- Dark-theme-compatible via `prose dark:prose-invert` Tailwind classes
+- Dependencies: `react-markdown`, `remark-math`, `rehype-katex`, `katex`
+
+### Mobile Navigation (New Feature Phase 1.2)
+- shadcn/ui Sidebar has built-in mobile support via Sheet component
+- `SidebarTrigger` added in mobile-only header (`md:hidden`) in dashboard layout
+- No custom mobile nav needed — uses existing sidebar component
+
+### Global AI Chat (New Feature Phase 2.1+2.2)
+- `src/lib/stores/global-chat-store.ts` — Zustand store for persistent chat state across navigation
+- `src/components/global-chat/chat-fab.tsx` — Fixed-position FAB (bottom-right), hides when panel is open
+- `src/components/global-chat/chat-panel.tsx` — Slide-in panel (420px), course context dropdown, streaming responses, quick actions
+- `src/app/api/courses/route.ts` — GET endpoint returning user's courses for context dropdown
+- Chat API extended: no `courseId` = cross-course mode (searches all user documents)
+- Manual SSE parsing (`0:`-prefixed lines) instead of `useChat` hook (state persists via Zustand)
+
+### Quiz Review Mode (New Feature Phase 3.1)
+- Added to quiz page: `reviewMode`, `reviewTotal`, `allQuestions` state
+- "Fehler wiederholen" button filters only wrong questions into new session
+- Review mode banner (orange) shown during play
+
+### AI Deep Explanation (New Feature Phase 3.2)
+- `src/app/api/quiz/explain/route.ts` — Generates structured explanation (why correct, why wrong, example, memory aid)
+- Freemium-checked + rate-limited, costs 1 AI generation
+- "Ausführlich erklären" button on wrong answers in quiz results
+
+### Manual Flashcard Creation & Editing (New Feature Phase 3.3)
+- `src/app/api/flashcards/manual/route.ts` — POST (create set+cards), PUT (edit single card)
+- `src/components/flashcard/flashcard-editor.tsx` — `CreateFlashcardDialog` (dynamic card form) + `EditFlashcardDialog` (single card edit)
+- Edit button on cards in learn page and review session (with `stopPropagation` to prevent flip)
+
+### Flashcard Reversal Mode (New Feature Phase 3.4)
+- `reversed` state in both flashcard learn page and review session
+- ArrowLeftRight toggle swaps front/back content and "Frage"/"Antwort" labels
+- Session-based (not persisted)
+
+### Flashcard Reviews Pagination (New Feature Phase 3.5)
+- Batch break every 10 cards with intermediate summary (stats, progress bar, rating distribution)
+- "Weiter lernen" or "Session beenden" buttons
+- Session complete summary now includes rating distribution (Nochmal/Schwer/Gut/Einfach counts)
+- `showBatchBreak`, `ratingCounts` state in review session
 
 ## Key Conventions
 

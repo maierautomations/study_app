@@ -11,9 +11,12 @@ import {
   Sparkles,
   CheckCircle2,
   Layers,
+  ArrowLeftRight,
 } from "lucide-react";
 import Link from "next/link";
 import { trackActivity } from "@/lib/gamification-client";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
+import { EditFlashcardDialog } from "@/components/flashcard/flashcard-editor";
 import { QUALITY_LABELS, type ReviewQuality } from "@/lib/spaced-repetition";
 
 type DueCard = {
@@ -64,6 +67,9 @@ export function ReviewSession({
   const [totalXp, setTotalXp] = useState(0);
   const [reviewedCount, setReviewedCount] = useState(0);
   const [againCards, setAgainCards] = useState<DueCard[]>([]);
+  const [reversed, setReversed] = useState(false);
+  const [showBatchBreak, setShowBatchBreak] = useState(false);
+  const [ratingCounts, setRatingCounts] = useState<Record<number, number>>({ 1: 0, 3: 0, 4: 0, 5: 0 });
 
   useEffect(() => {
     async function fetchDueCards() {
@@ -119,10 +125,20 @@ export function ReviewSession({
         }
 
         setReviewedCount((prev) => prev + 1);
+        setRatingCounts((prev) => ({ ...prev, [quality]: (prev[quality] ?? 0) + 1 }));
 
         // If "Nochmal", add card to again queue
         if (quality === 1) {
           setAgainCards((prev) => [...prev, currentCard]);
+        }
+
+        // Check for batch break every 10 cards
+        const nextReviewed = reviewedCount + 1;
+        if (nextReviewed % 10 === 0 && currentIndex < totalCards - 1) {
+          setCurrentIndex((prev) => prev + 1);
+          setIsFlipped(false);
+          setShowBatchBreak(true);
+          return;
         }
 
         // Move to next card
@@ -151,7 +167,7 @@ export function ReviewSession({
         setSubmitting(false);
       }
     },
-    [currentCard, submitting, courseId, currentIndex, totalCards, againCards]
+    [currentCard, submitting, courseId, currentIndex, totalCards, againCards, reviewedCount]
   );
 
   // Keyboard shortcuts
@@ -221,12 +237,65 @@ export function ReviewSession({
             </div>
           </div>
 
+          <div className="grid grid-cols-4 gap-2 mb-6 text-xs">
+            {QUALITY_BUTTONS.map((btn) => (
+              <div key={btn.quality} className="p-2 rounded bg-muted text-center">
+                <p className="font-medium">{ratingCounts[btn.quality] ?? 0}</p>
+                <p className="text-muted-foreground">{btn.label}</p>
+              </div>
+            ))}
+          </div>
+
           <div className="flex gap-3 justify-center">
             <Button asChild variant="outline">
               <Link href="/dashboard/reviews">Zurück</Link>
             </Button>
             <Button asChild>
               <Link href="/dashboard">Dashboard</Link>
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Batch break screen every 10 cards
+  if (showBatchBreak) {
+    return (
+      <div className="max-w-lg mx-auto space-y-6">
+        <Card className="p-8 text-center">
+          <Sparkles className="h-10 w-10 text-primary mx-auto mb-3" />
+          <h2 className="text-xl font-bold mb-1">Zwischenstand</h2>
+          <p className="text-muted-foreground mb-4">{courseName}</p>
+
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="p-3 rounded-lg bg-muted">
+              <p className="text-2xl font-bold">{reviewedCount}</p>
+              <p className="text-xs text-muted-foreground">Karten gelernt</p>
+            </div>
+            <div className="p-3 rounded-lg bg-muted">
+              <p className="text-2xl font-bold">{totalCards - currentIndex}</p>
+              <p className="text-xs text-muted-foreground">Karten übrig</p>
+            </div>
+          </div>
+
+          <Progress value={(reviewedCount / totalCards) * 100} className="h-2 mb-4" />
+
+          <div className="grid grid-cols-4 gap-2 mb-6 text-xs">
+            {QUALITY_BUTTONS.map((btn) => (
+              <div key={btn.quality} className="p-2 rounded bg-muted text-center">
+                <p className="font-medium">{ratingCounts[btn.quality] ?? 0}</p>
+                <p className="text-muted-foreground">{btn.label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex gap-3 justify-center">
+            <Button variant="outline" onClick={() => setSessionComplete(true)}>
+              Session beenden
+            </Button>
+            <Button onClick={() => setShowBatchBreak(false)}>
+              Weiter lernen
             </Button>
           </div>
         </Card>
@@ -282,13 +351,29 @@ export function ReviewSession({
             className="absolute inset-0 flex items-center justify-center p-8"
             style={{ backfaceVisibility: "hidden" }}
           >
+            {currentCard && (
+              <div className="absolute top-2 right-2" onClick={(e) => e.stopPropagation()}>
+                <EditFlashcardDialog
+                  flashcardId={currentCard.id}
+                  initialFront={currentCard.front}
+                  initialBack={currentCard.back}
+                  onSaved={(front, back) => {
+                    setCards((prev) =>
+                      prev.map((c) =>
+                        c.id === currentCard.id ? { ...c, front, back } : c
+                      )
+                    );
+                  }}
+                />
+              </div>
+            )}
             <div className="text-center">
               <p className="text-xs text-muted-foreground mb-3 uppercase tracking-wide">
-                Frage
+                {reversed ? "Antwort" : "Frage"}
               </p>
-              <p className="text-xl font-medium leading-relaxed">
-                {currentCard?.front}
-              </p>
+              {currentCard && (
+                <MarkdownRenderer content={reversed ? currentCard.back : currentCard.front} className="text-xl" compact />
+              )}
               <p className="text-xs text-muted-foreground mt-6">
                 Klicken oder Leertaste zum Umdrehen
               </p>
@@ -305,9 +390,11 @@ export function ReviewSession({
           >
             <div className="text-center">
               <p className="text-xs text-muted-foreground mb-3 uppercase tracking-wide">
-                Antwort
+                {reversed ? "Frage" : "Antwort"}
               </p>
-              <p className="text-lg leading-relaxed">{currentCard?.back}</p>
+              {currentCard && (
+                <MarkdownRenderer content={reversed ? currentCard.front : currentCard.back} className="text-lg" compact />
+              )}
             </div>
           </Card>
         </div>
@@ -345,7 +432,18 @@ export function ReviewSession({
         </div>
       )}
 
-      {/* Keyboard hint */}
+      {/* Reversal toggle + Keyboard hint */}
+      <div className="flex justify-center">
+        <Button
+          variant={reversed ? "secondary" : "ghost"}
+          size="sm"
+          className="text-xs"
+          onClick={() => { setReversed((r) => !r); setIsFlipped(false); }}
+        >
+          <ArrowLeftRight className="mr-1.5 h-3.5 w-3.5" />
+          {reversed ? "Normal lernen" : "Umgekehrt lernen"}
+        </Button>
+      </div>
       <p className="text-xs text-center text-muted-foreground">
         Tastatur: Leertaste = umdrehen, 1-4 = bewerten
       </p>

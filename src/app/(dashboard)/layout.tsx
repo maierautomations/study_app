@@ -1,8 +1,11 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { AchievementListener } from "@/components/gamification/achievement-listener";
+import { Separator } from "@/components/ui/separator";
+import { ChatFAB } from "@/components/global-chat/chat-fab";
+import { ChatPanel } from "@/components/global-chat/chat-panel";
 
 export default async function DashboardLayout({
   children,
@@ -56,9 +59,16 @@ export default async function DashboardLayout({
         dueReviewCount={dueCount ?? 0}
       />
       <SidebarInset>
+        <header className="flex h-12 items-center gap-2 border-b px-4 md:hidden">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="h-4" />
+          <span className="text-sm font-semibold">StudyApp</span>
+        </header>
         <main className="flex-1 overflow-auto">{children}</main>
         <AchievementListener />
       </SidebarInset>
+      <ChatFAB />
+      <ChatPanel />
     </SidebarProvider>
   );
 }

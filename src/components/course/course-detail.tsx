@@ -32,6 +32,7 @@ import { DocumentUpload } from "@/components/document/document-upload";
 import { SummaryView } from "@/components/document/summary-view";
 import { GlossaryView } from "@/components/document/glossary-view";
 import { DeleteDocumentDialog } from "@/components/document/delete-document-dialog";
+import { CreateFlashcardDialog } from "@/components/flashcard/flashcard-editor";
 import { WeaknessChart } from "@/components/progress/weakness-chart";
 import type { Course, Document, Quiz, FlashcardSet } from "@/types/database";
 
@@ -450,18 +451,24 @@ export function CourseDetail({
                   Lade zuerst Dokumente hoch. Dann kannst du KI-generierte
                   Flashcards erstellen.
                 </p>
-                {documents.some((d) => d.status === "ready") && (
-                  <Button
-                    onClick={() =>
-                      router.push(
-                        `/dashboard/courses/${course.id}/flashcards/new`
-                      )
-                    }
-                  >
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Flashcards generieren
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  {documents.some((d) => d.status === "ready") && (
+                    <Button
+                      onClick={() =>
+                        router.push(
+                          `/dashboard/courses/${course.id}/flashcards/new`
+                        )
+                      }
+                    >
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Flashcards generieren
+                    </Button>
+                  )}
+                  <CreateFlashcardDialog
+                    courseId={course.id}
+                    onCreated={() => window.location.reload()}
+                  />
+                </div>
               </CardContent>
             </Card>
           ) : (
@@ -505,19 +512,24 @@ export function CourseDetail({
                   </CardContent>
                 </Card>
               ))}
-              {documents.some((d) => d.status === "ready") && (
-                <Button
-                  className="mt-4"
-                  onClick={() =>
-                    router.push(
-                      `/dashboard/courses/${course.id}/flashcards/new`
-                    )
-                  }
-                >
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Neue Flashcards generieren
-                </Button>
-              )}
+              <div className="flex gap-2 mt-4">
+                {documents.some((d) => d.status === "ready") && (
+                  <Button
+                    onClick={() =>
+                      router.push(
+                        `/dashboard/courses/${course.id}/flashcards/new`
+                      )
+                    }
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Neue Flashcards generieren
+                  </Button>
+                )}
+                <CreateFlashcardDialog
+                  courseId={course.id}
+                  onCreated={() => window.location.reload()}
+                />
+              </div>
             </div>
           )}
         </TabsContent>

@@ -14,7 +14,10 @@ import {
   Shuffle,
   CheckCircle2,
   Loader2,
+  ArrowLeftRight,
 } from "lucide-react";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
+import { EditFlashcardDialog } from "@/components/flashcard/flashcard-editor";
 import type { FlashcardSet, Flashcard } from "@/types/database";
 
 export default function FlashcardLearnPage() {
@@ -30,6 +33,7 @@ export default function FlashcardLearnPage() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [knownCards, setKnownCards] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [reversed, setReversed] = useState(false);
 
   useEffect(() => {
     async function fetchCards() {
@@ -174,13 +178,25 @@ export default function FlashcardLearnPage() {
             className="absolute inset-0 flex items-center justify-center p-8"
             style={{ backfaceVisibility: "hidden" }}
           >
+            <div className="absolute top-2 right-2" onClick={(e) => e.stopPropagation()}>
+              <EditFlashcardDialog
+                flashcardId={currentCard.id}
+                initialFront={currentCard.front}
+                initialBack={currentCard.back}
+                onSaved={(front, back) => {
+                  setCards((prev) =>
+                    prev.map((c) =>
+                      c.id === currentCard.id ? { ...c, front, back } : c
+                    )
+                  );
+                }}
+              />
+            </div>
             <div className="text-center">
               <p className="text-xs text-muted-foreground mb-3 uppercase tracking-wide">
-                Frage
+                {reversed ? "Antwort" : "Frage"}
               </p>
-              <p className="text-xl font-medium leading-relaxed">
-                {currentCard.front}
-              </p>
+              <MarkdownRenderer content={reversed ? currentCard.back : currentCard.front} className="text-xl" compact />
               <p className="text-xs text-muted-foreground mt-6">
                 Klicken oder Leertaste zum Umdrehen
               </p>
@@ -197,9 +213,9 @@ export default function FlashcardLearnPage() {
           >
             <div className="text-center">
               <p className="text-xs text-muted-foreground mb-3 uppercase tracking-wide">
-                Antwort
+                {reversed ? "Frage" : "Antwort"}
               </p>
-              <p className="text-lg leading-relaxed">{currentCard.back}</p>
+              <MarkdownRenderer content={reversed ? currentCard.front : currentCard.back} className="text-lg" compact />
             </div>
           </Card>
         </div>
@@ -244,6 +260,14 @@ export default function FlashcardLearnPage() {
       </div>
 
       <div className="flex justify-center gap-2">
+        <Button
+          variant={reversed ? "secondary" : "ghost"}
+          size="sm"
+          onClick={() => { setReversed((r) => !r); setIsFlipped(false); }}
+        >
+          <ArrowLeftRight className="mr-2 h-4 w-4" />
+          {reversed ? "Normal lernen" : "Umgekehrt lernen"}
+        </Button>
         <Button variant="ghost" size="sm" onClick={handleShuffle}>
           <Shuffle className="mr-2 h-4 w-4" />
           Mischen
