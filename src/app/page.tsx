@@ -14,13 +14,24 @@ export default async function LandingPage() {
   } = await supabase.auth.getUser();
   const isLoggedIn = !!user;
 
+  let userTier: "free" | "premium" | null = null;
+  if (user) {
+    const { data: profileRaw } = await supabase
+      .from("profiles")
+      .select("tier")
+      .eq("id", user.id)
+      .single();
+    const profile = profileRaw as unknown as { tier: "free" | "premium" } | null;
+    userTier = profile?.tier ?? "free";
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar isLoggedIn={isLoggedIn} />
       <Hero isLoggedIn={isLoggedIn} />
       <Features />
       <HowItWorks />
-      <Pricing isLoggedIn={isLoggedIn} />
+      <Pricing isLoggedIn={isLoggedIn} userTier={userTier} />
       <FAQ />
       <Footer />
     </div>

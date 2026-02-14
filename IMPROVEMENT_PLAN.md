@@ -1,6 +1,6 @@
 # StudyApp — Verbesserungs- & Feature-Plan
 
-> Erstellt: 2026-02-13 | Aktualisiert: 2026-02-14 | Status: Phasen 1-5 abgeschlossen (14/21) | Kontext: Nach Quick Wins + Wichtig, neue Feature-Roadmap
+> Erstellt: 2026-02-13 | Aktualisiert: 2026-02-14 | Status: Phasen 1-6 abgeschlossen (21/21) ✅ | Kontext: Nach Quick Wins + Wichtig, neue Feature-Roadmap
 
 ## Context
 
@@ -155,35 +155,35 @@ Die App ist feature-complete (Phasen 1-3, A-E). Quick Wins (14/14) und Wichtig-I
 - Skip-Link ("Zum Hauptinhalt springen")
 - `aria-label` auf alle 11+ Icon-only Buttons
 - Fokus-Indikatoren (`:focus-visible` Styles)
-**Status:** ⬜ Ausstehend
+**Status:** ✅ Erledigt — Skip-Link, `aria-label` auf Icon-Buttons, `:focus-visible` Styles in globals.css
 
 #### 6.2 Globaler Fortschrittsüberblick
 **Beschreibung:** Neue Seite `/dashboard/progress`. Kurs-Vergleichstabelle, Lernaktivitäts-Heatmap (GitHub-Style), Gesamtstatistiken, XP-Verlauf (30 Tage Liniendiagramm).
-**Status:** ⬜ Ausstehend
+**Status:** ✅ Erledigt — `src/components/progress/progress-overview.tsx`, Sidebar-Link "Fortschritt"
 
 #### 6.3 Pomodoro-Timer
 **Beschreibung:** Timer-Button im Header neben Streak. 25-Min-Timer im Header. Pause-/Session-Notifications. Persistent über Seitenwechsel (Context). +15 XP pro Session.
-**Status:** ⬜ Ausstehend
+**Status:** ✅ Erledigt — Zustand Store, Popover-Timer im Header, +15 XP via Gamification API
 
 #### 6.4 Pricing-CTAs verbessern
 **Problem:** Alle drei Pricing-Karten zeigen "Zum Dashboard".
 **Lösung:** Free: "Kostenlos starten →", Basis: "Basis wählen →" (Akzent), Pro: "Pro upgraden →". Eingeloggt: "Aktueller Plan" / "Upgraden".
-**Status:** ⬜ Ausstehend
+**Status:** ✅ Erledigt — Tier-spezifische Labels, "Aktueller Plan" disabled für aktiven Tier
 
 #### 6.5 Quiz-Titel automatisch verbessern
 **Problem:** Alle Quizzes heißen generisch "Quiz: [Kursname]".
 **Lösung:** KI generiert beschreibenden Titel. Fallback: "Quiz: [Kurs] – [Schwierigkeit] – [Datum]". Nutzer kann überschreiben.
-**Status:** ⬜ Ausstehend
+**Status:** ✅ Erledigt — `generated_title` in AI Schema, Fallback-Format
 
 #### 6.6 Flashcard-Anzahl in Listenansicht
 **Problem:** Flashcard-Sets zeigen keine Kartenanzahl.
 **Lösung:** "Flashcards: KI · 22 Karten" in der Listenansicht.
-**Status:** ⬜ Ausstehend
+**Status:** ✅ Erledigt — Kartenanzahl via JOIN in Server-Component
 
 #### 6.7 "Alles generieren" Kontingent-Info
 **Problem:** Button zeigt nicht, wie viele KI-Generierungen verbraucht werden.
 **Lösung:** "Verbraucht X von Y verbleibenden KI-Generierungen". Disabled wenn nicht genug Kontingent.
-**Status:** ⬜ Ausstehend
+**Status:** ✅ Erledigt — Quota-Anzeige + disabled bei erschöpftem Kontingent
 
 ---
 
@@ -205,13 +205,13 @@ Die App ist feature-complete (Phasen 1-3, A-E). Quick Wins (14/14) und Wichtig-I
 | 12 | Kapitel-basierte KI-Generierung       | 5.1   | ✅     |
 | 13 | Wissensstand-Check                    | 5.2   | ✅     |
 | 14 | Smart Review KI-Merkhilfen            | 5.3   | ✅     |
-| 15 | Accessibility                         | 6.1   | ⬜     |
-| 16 | Globaler Fortschrittsüberblick        | 6.2   | ⬜     |
-| 17 | Pomodoro-Timer                        | 6.3   | ⬜     |
-| 18 | Pricing-CTAs                          | 6.4   | ⬜     |
-| 19 | Quiz-Titel automatisch                | 6.5   | ⬜     |
-| 20 | Flashcard-Anzahl Listenansicht        | 6.6   | ⬜     |
-| 21 | Alles-generieren Kontingent-Info      | 6.7   | ⬜     |
+| 15 | Accessibility                         | 6.1   | ✅     |
+| 16 | Globaler Fortschrittsüberblick        | 6.2   | ✅     |
+| 17 | Pomodoro-Timer                        | 6.3   | ✅     |
+| 18 | Pricing-CTAs                          | 6.4   | ✅     |
+| 19 | Quiz-Titel automatisch                | 6.5   | ✅     |
+| 20 | Flashcard-Anzahl Listenansicht        | 6.6   | ✅     |
+| 21 | Alles-generieren Kontingent-Info      | 6.7   | ✅     |
 
 ---
 

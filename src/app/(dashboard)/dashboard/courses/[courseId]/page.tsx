@@ -30,6 +30,7 @@ export default async function CourseDetailPage({
     { data: documentsRaw },
     { data: quizzesRaw },
     { data: flashcardSetsRaw },
+    { data: profileRaw },
   ] = await Promise.all([
     supabase
       .from("documents")
@@ -43,20 +44,44 @@ export default async function CourseDetailPage({
       .order("created_at", { ascending: false }),
     supabase
       .from("flashcard_sets")
-      .select("*")
+      .select("*, flashcards(id)")
       .eq("course_id", courseId)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("profiles")
+      .select("ai_generations_used, tier")
+      .eq("id", user.id)
+      .single(),
   ]);
   const documents = documentsRaw as unknown as Document[] | null;
   const quizzes = quizzesRaw as unknown as Quiz[] | null;
-  const flashcardSets = flashcardSetsRaw as unknown as FlashcardSet[] | null;
+  const flashcardSetsWithCards = flashcardSetsRaw as unknown as (FlashcardSet & { flashcards: { id: string }[] })[] | null;
+
+  // Build card count map
+  const flashcardCounts: Record<string, number> = {};
+  const flashcardSets: FlashcardSet[] = [];
+  if (flashcardSetsWithCards) {
+    for (const set of flashcardSetsWithCards) {
+      flashcardCounts[set.id] = set.flashcards?.length ?? 0;
+      // Strip the nested flashcards array for the FlashcardSet type
+      const { flashcards: _, ...setWithoutCards } = set;
+      flashcardSets.push(setWithoutCards as FlashcardSet);
+    }
+  }
+
+  const profile = profileRaw as unknown as { ai_generations_used: number; tier: "free" | "premium" } | null;
+  const quotaUsed = profile?.ai_generations_used ?? 0;
+  const quotaLimit = profile?.tier === "premium" ? -1 : 20;
 
   return (
     <CourseDetail
       course={course}
       documents={documents ?? []}
       quizzes={quizzes ?? []}
-      flashcardSets={flashcardSets ?? []}
+      flashcardSets={flashcardSets}
+      flashcardCounts={flashcardCounts}
+      quotaUsed={quotaUsed}
+      quotaLimit={quotaLimit}
     />
   );
 }

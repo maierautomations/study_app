@@ -8,7 +8,7 @@ StudyApp is an AI-powered exam preparation web app for German-speaking universit
 
 ## Current Status
 
-**Phases 1-5, A, B, C, D, E are complete. Quick Wins (14/14) and Wichtig (13/13) from IMPROVEMENT_PLAN.md are done. New Feature Roadmap Phases 1-5 (14/21) are complete. Next: Phase 6 (UX Polish), then Phase F (Stripe, Deployment).**
+**Phases 1-6, A, B, C, D, E are complete. Quick Wins (14/14) and Wichtig (13/13) from IMPROVEMENT_PLAN.md are done. New Feature Roadmap Phases 1-6 (21/21) are complete. Next: Phase F (Stripe, Deployment).**
 
 See `ROADMAP.md` for the full feature roadmap, `PLAN.md` for architectural details, and `IMPROVEMENT_PLAN.md` for the prioritized improvement list.
 
@@ -233,6 +233,45 @@ The course detail page (`/dashboard/courses/[courseId]`) uses client-side tabs (
 - Collapsible display under answer content with Lightbulb icon
 - Freemium-checked + rate-limited, costs 1 AI generation
 - `nochmalCounts`, `memoryAids` state tracking per card ID in review session
+
+### Accessibility (Phase 6.1)
+- Skip link ("Zum Hauptinhalt springen") in dashboard layout
+- `aria-label` on icon-only buttons (export, sidebar trigger)
+- Enhanced `:focus-visible` styles in `globals.css`
+- `id="main-content"` on main element for skip link target
+
+### Global Progress Overview (Phase 6.2)
+- `/dashboard/progress` — New page with overall stats, activity heatmap, XP chart, course comparison
+- `src/components/progress/progress-overview.tsx` — Client component with GitHub-style heatmap (SVG), 30-day XP bar chart, course activity bars
+- Sidebar link "Fortschritt" with BarChart3 icon in secondary nav
+
+### Pomodoro Timer (Phase 6.3)
+- `src/lib/stores/pomodoro-store.ts` — Zustand store for timer state (persists across navigation)
+- `src/components/gamification/pomodoro-timer.tsx` — Popover timer with circular progress, start/pause/reset controls
+- Placed in dashboard header (visible on all pages)
+- +15 XP per completed 25-min session via gamification API
+- `pomodoro_complete` added to XP_REWARDS (15 XP) and ACTIVITY_MINUTES (25 min)
+
+### Pricing CTAs (Phase 6.4)
+- Tier-specific CTA labels: Free="Kostenlos starten", Basis="Basis upgraden", Pro="Pro upgraden"
+- Logged-in users see "Aktueller Plan" (disabled) on their active tier, "Upgraden" on others
+- `userTier` prop passed from landing page server component
+
+### Quiz Titles (Phase 6.5)
+- AI generates descriptive German title via `generated_title` field in quiz output schema
+- Fallback format: "Quiz: [Kurs] – [Schwierigkeit] – [Datum]"
+- User-provided title takes priority over AI-generated title
+
+### Flashcard Count (Phase 6.6)
+- Card count shown below each flashcard set title in course detail: "X Karten"
+- Fetched via `flashcard_sets` JOIN with `flashcards(id)` in server component
+- `flashcardCounts` prop passed as `Record<string, number>` to CourseDetail
+
+### Generate-All Quota Info (Phase 6.7)
+- Shows "X von Y KI-Generierungen verbraucht" on the generate-all card
+- Button disabled when quota exhausted (free tier: 20 limit)
+- Premium users see "(spart KI-Kontingent)" without count
+- `quotaUsed` and `quotaLimit` props passed from server component
 
 ## Key Conventions
 

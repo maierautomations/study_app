@@ -42,6 +42,9 @@ interface CourseDetailProps {
   documents: Document[];
   quizzes: Quiz[];
   flashcardSets: FlashcardSet[];
+  flashcardCounts?: Record<string, number>;
+  quotaUsed?: number;
+  quotaLimit?: number; // -1 = unlimited
 }
 
 export function CourseDetail({
@@ -49,6 +52,9 @@ export function CourseDetail({
   documents,
   quizzes,
   flashcardSets,
+  flashcardCounts = {},
+  quotaUsed = 0,
+  quotaLimit = 20,
 }: CourseDetailProps) {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -226,35 +232,42 @@ export function CourseDetail({
         <TabsContent value="documents" className="mt-6 space-y-6">
           <DocumentUpload courseId={course.id} />
 
-          {documents.some((d) => d.status === "ready") && (
-            <Card className="border-primary/20 bg-primary/5">
-              <CardContent className="flex items-center justify-between py-3">
-                <div>
-                  <p className="font-medium text-sm">Alles auf einmal generieren</p>
-                  <p className="text-xs text-muted-foreground">
-                    10 Quizfragen + 20 Flashcards + Zusammenfassung in einem Schritt (spart KI-Kontingent)
-                  </p>
-                </div>
-                <Button
-                  size="sm"
-                  onClick={handleGenerateAll}
-                  disabled={isGeneratingAll}
-                >
-                  {isGeneratingAll ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Wird generiert...
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="mr-2 h-4 w-4" />
-                      Alles generieren
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          {documents.some((d) => d.status === "ready") && (() => {
+            const isUnlimited = quotaLimit === -1;
+            const quotaExhausted = !isUnlimited && quotaUsed >= quotaLimit;
+            return (
+              <Card className="border-primary/20 bg-primary/5">
+                <CardContent className="flex items-center justify-between py-3">
+                  <div>
+                    <p className="font-medium text-sm">Alles auf einmal generieren</p>
+                    <p className="text-xs text-muted-foreground">
+                      10 Quizfragen + 20 Flashcards + Zusammenfassung in einem Schritt
+                      {isUnlimited
+                        ? " (spart KI-Kontingent)"
+                        : ` · ${quotaUsed} von ${quotaLimit} KI-Generierungen verbraucht`}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleGenerateAll}
+                    disabled={isGeneratingAll || quotaExhausted}
+                  >
+                    {isGeneratingAll ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Wird generiert...
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="mr-2 h-4 w-4" />
+                        Alles generieren
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           {documents.length > 0 && (
             <div className="space-y-2">
@@ -410,7 +423,7 @@ export function CourseDetail({
                         variant="ghost"
                         size="sm"
                         className="h-7 w-7 p-0"
-                        title="Als PDF exportieren"
+                        aria-label="Quiz als PDF exportieren"
                         onClick={(e) => {
                           e.preventDefault();
                           triggerExport("quiz", quiz.id);
@@ -482,13 +495,16 @@ export function CourseDetail({
                       className="flex-1"
                     >
                       <p className="font-medium text-sm">{set.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {flashcardCounts[set.id] ?? 0} Karten
+                      </p>
                     </Link>
                     <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
                         className="h-7 w-7 p-0"
-                        title="Als PDF exportieren"
+                        aria-label="Flashcards als PDF exportieren"
                         onClick={(e) => {
                           e.preventDefault();
                           triggerExport("flashcards", set.id);

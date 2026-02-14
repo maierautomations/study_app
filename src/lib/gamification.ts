@@ -7,6 +7,7 @@ export const XP_REWARDS = {
   chat_message: 5,
   course_create: 30,
   daily_goal_complete: 25,
+  pomodoro_complete: 15,
 } as const;
 
 export type ActivityType = keyof typeof XP_REWARDS;
@@ -19,6 +20,7 @@ export const ACTIVITY_MINUTES: Record<string, number> = {
   document_upload: 3,
   chat_message: 2,
   course_create: 1,
+  pomodoro_complete: 25,
 };
 
 // Level thresholds — progressive XP requirements

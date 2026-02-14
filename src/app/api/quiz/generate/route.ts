@@ -9,6 +9,7 @@ import { parseBody, quizGenerateSchema } from "@/lib/validations";
 import { rateLimit, AI_RATE_LIMIT } from "@/lib/rate-limit";
 
 const QuizOutputSchema = z.object({
+  generated_title: z.string().describe("A short, descriptive German title for this quiz based on the content (max 60 chars)"),
   questions: z.array(
     z.object({
       question_text: z.string(),
@@ -143,6 +144,8 @@ ${difficultyPrompt}
 
 ${getQuestionTypesPrompt(questionTypes)}
 
+Erstelle außerdem einen kurzen, beschreibenden deutschen Titel für dieses Quiz (max. 60 Zeichen), der das Hauptthema der Fragen widerspiegelt. Beispiel: "Grundlagen der Thermodynamik" oder "NLP & Textverarbeitung".
+
 Für jede Frage:
 - Formuliere die Frage klar und eindeutig auf Deutsch
 - Bei multiple_choice: Erstelle 4 plausible Optionen mit Labels A, B, C, D
@@ -161,7 +164,7 @@ ${contextText}`,
       .insert({
         course_id: courseId,
         user_id: user.id,
-        title: title || `Quiz: ${course.name}`,
+        title: title || object.generated_title || `Quiz: ${course.name} – ${difficulty === "easy" ? "Leicht" : difficulty === "medium" ? "Mittel" : "Schwer"} – ${new Date().toLocaleDateString("de-DE")}`,
         document_ids: documentIds,
         difficulty,
         question_count: object.questions.length,

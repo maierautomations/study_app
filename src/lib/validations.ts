@@ -94,6 +94,7 @@ export const gamificationSchema = z.object({
     "document_upload",
     "chat_message",
     "course_create",
+    "pomodoro_complete",
   ]),
   courseId: courseId.optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),

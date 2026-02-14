@@ -25,6 +25,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import {
+  BarChart3,
   BookOpen,
   CalendarDays,
   GraduationCap,
@@ -58,6 +59,11 @@ const secondaryNavItems = [
     title: "Wiederholungen",
     href: "/dashboard/reviews",
     icon: Layers,
+  },
+  {
+    title: "Fortschritt",
+    href: "/dashboard/progress",
+    icon: BarChart3,
   },
   {
     title: "Lernplan",

@@ -6,6 +6,7 @@ import { AchievementListener } from "@/components/gamification/achievement-liste
 import { Separator } from "@/components/ui/separator";
 import { ChatFAB } from "@/components/global-chat/chat-fab";
 import { ChatPanel } from "@/components/global-chat/chat-panel";
+import { PomodoroTimer } from "@/components/gamification/pomodoro-timer";
 
 export default async function DashboardLayout({
   children,
@@ -44,6 +45,9 @@ export default async function DashboardLayout({
 
   return (
     <SidebarProvider>
+      <a href="#main-content" className="skip-link">
+        Zum Hauptinhalt springen
+      </a>
       <AppSidebar
         user={{
           email: user.email,
@@ -59,12 +63,17 @@ export default async function DashboardLayout({
         dueReviewCount={dueCount ?? 0}
       />
       <SidebarInset>
-        <header className="flex h-12 items-center gap-2 border-b px-4 md:hidden">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="h-4" />
-          <span className="text-sm font-semibold">StudyApp</span>
+        <header className="flex h-12 items-center gap-2 border-b px-4">
+          <div className="md:hidden flex items-center gap-2">
+            <SidebarTrigger className="-ml-1" aria-label="Navigation öffnen" />
+            <Separator orientation="vertical" className="h-4" />
+            <span className="text-sm font-semibold">StudyApp</span>
+          </div>
+          <div className="ml-auto">
+            <PomodoroTimer />
+          </div>
         </header>
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main id="main-content" className="flex-1 overflow-auto">{children}</main>
         <AchievementListener />
       </SidebarInset>
       <ChatFAB />
