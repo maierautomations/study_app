@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
+import { AchievementListener } from "@/components/gamification/achievement-listener";
 
 export default async function DashboardLayout({
   children,
@@ -17,11 +18,18 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  const { data: profileData } = await supabase
-    .from("profiles")
-    .select("display_name, xp, level, current_streak, ai_generations_used, tier")
-    .eq("id", user.id)
-    .single();
+  const [{ data: profileData }, { count: dueCount }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("display_name, xp, level, current_streak, ai_generations_used, tier")
+      .eq("id", user.id)
+      .single(),
+    supabase
+      .from("flashcard_reviews")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .lte("next_review_at", new Date().toISOString()),
+  ]);
   const profile = profileData as unknown as {
     display_name: string | null;
     xp: number;
@@ -45,9 +53,11 @@ export default async function DashboardLayout({
           aiGenerationsUsed: profile.ai_generations_used ?? 0,
           tier: profile.tier ?? "free",
         } : undefined}
+        dueReviewCount={dueCount ?? 0}
       />
       <SidebarInset>
         <main className="flex-1 overflow-auto">{children}</main>
+        <AchievementListener />
       </SidebarInset>
     </SidebarProvider>
   );

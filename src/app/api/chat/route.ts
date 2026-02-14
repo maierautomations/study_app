@@ -2,6 +2,7 @@ import { streamText, embed, convertToModelMessages } from "ai";
 import { createClient } from "@/lib/supabase/server";
 import { getModel, getEmbeddingModel } from "@/lib/ai/provider";
 import { checkFreemiumLimit, incrementUsage, getFreemiumErrorMessage } from "@/lib/freemium";
+import { rateLimit, AI_RATE_LIMIT } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
@@ -14,6 +15,15 @@ export async function POST(req: Request) {
 
     if (!user) {
       return new Response("Nicht autorisiert", { status: 401 });
+    }
+
+    // Rate limit
+    const rl = rateLimit(`${user.id}:chat`, AI_RATE_LIMIT.maxRequests, AI_RATE_LIMIT.windowMs);
+    if (!rl.success) {
+      return new Response(
+        JSON.stringify({ error: `Zu viele Anfragen. Bitte warte ${Math.ceil(rl.resetInMs / 1000)} Sekunden.` }),
+        { status: 429, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // Freemium limit check

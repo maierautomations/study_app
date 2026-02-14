@@ -13,7 +13,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
@@ -84,9 +83,10 @@ interface AppSidebarProps {
     aiGenerationsUsed: number;
     tier: "free" | "premium";
   };
+  dueReviewCount?: number;
 }
 
-export function AppSidebar({ user, gamification }: AppSidebarProps) {
+export function AppSidebar({ user, gamification, dueReviewCount = 0 }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -196,6 +196,11 @@ export function AppSidebar({ user, gamification }: AppSidebarProps) {
                     <a href={item.href}>
                       <item.icon className="size-4" />
                       <span>{item.title}</span>
+                      {item.href === "/dashboard/reviews" && dueReviewCount > 0 && (
+                        <Badge variant="destructive" className="ml-auto h-5 px-1.5 text-[10px]">
+                          {dueReviewCount}
+                        </Badge>
+                      )}
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

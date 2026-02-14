@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/components/theme-provider";
 import { CookieBanner } from "@/components/cookie-banner";
 import "./globals.css";
 
@@ -27,15 +28,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de">
+    <html lang="de" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <TooltipProvider>
-          {children}
-          <Toaster richColors position="bottom-right" />
-          <CookieBanner />
-        </TooltipProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <TooltipProvider>
+            {children}
+            <Toaster richColors position="bottom-right" />
+            <CookieBanner />
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

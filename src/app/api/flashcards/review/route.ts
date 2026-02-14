@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { calculateSM2, getDefaultReviewState } from "@/lib/spaced-repetition";
+import { parseBody, flashcardReviewSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -12,22 +13,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   }
 
-  const { flashcardId, quality } = await request.json();
-
-  if (!flashcardId || quality === undefined) {
-    return NextResponse.json(
-      { error: "Fehlende Parameter (flashcardId, quality)" },
-      { status: 400 }
-    );
+  const body = await request.json();
+  const parsed = parseBody(flashcardReviewSchema, body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
-
-  // Validate quality value
-  if (![1, 3, 4, 5].includes(quality)) {
-    return NextResponse.json(
-      { error: "Ungültiger quality-Wert (erlaubt: 1, 3, 4, 5)" },
-      { status: 400 }
-    );
-  }
+  const { flashcardId, quality } = parsed.data;
 
   // Verify flashcard exists and user owns it (through flashcard_set → course)
   const { data: flashcardRaw } = await supabase

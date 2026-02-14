@@ -5,6 +5,8 @@ import { AI_CONTEXT_LIMITS } from "@/lib/ai/config";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { checkFreemiumLimit, incrementUsage, getFreemiumErrorMessage } from "@/lib/freemium";
+import { parseBody, flashcardGenerateSchema } from "@/lib/validations";
+import { rateLimit, AI_RATE_LIMIT } from "@/lib/rate-limit";
 
 const FlashcardOutputSchema = z.object({
   flashcards: z.array(
@@ -25,6 +27,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   }
 
+  // Rate limit
+  const rl = rateLimit(`${user.id}:flashcard-generate`, AI_RATE_LIMIT.maxRequests, AI_RATE_LIMIT.windowMs);
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: `Zu viele Anfragen. Bitte warte ${Math.ceil(rl.resetInMs / 1000)} Sekunden.` },
+      { status: 429 }
+    );
+  }
+
   // Freemium limit check
   const freemium = await checkFreemiumLimit(user.id);
   if (!freemium.allowed) {
@@ -34,14 +45,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { courseId, documentIds, title, count } = await request.json();
-
-  if (!courseId || !documentIds?.length) {
-    return NextResponse.json(
-      { error: "Fehlende Parameter" },
-      { status: 400 }
-    );
+  const body = await request.json();
+  const parsed = parseBody(flashcardGenerateSchema, body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
+  const { courseId, documentIds, title, count } = parsed.data;
 
   // Verify course ownership
   const { data: courseRaw } = await supabase

@@ -31,6 +31,7 @@ import { DeleteCourseDialog } from "./delete-course-dialog";
 import { DocumentUpload } from "@/components/document/document-upload";
 import { SummaryView } from "@/components/document/summary-view";
 import { GlossaryView } from "@/components/document/glossary-view";
+import { DeleteDocumentDialog } from "@/components/document/delete-document-dialog";
 import { WeaknessChart } from "@/components/progress/weakness-chart";
 import type { Course, Document, Quiz, FlashcardSet } from "@/types/database";
 
@@ -290,6 +291,11 @@ export function CourseDetail({
                           </span>
                         </Button>
                       )}
+                      <DeleteDocumentDialog
+                        documentId={doc.id}
+                        documentName={doc.name}
+                        filePath={doc.file_path}
+                      />
                       <Badge
                         variant={
                           doc.status === "ready"

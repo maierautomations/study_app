@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { scoreToGermanGrade } from "@/lib/grading";
+import { parseBody, examSubmitSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -12,14 +13,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   }
 
-  const { examId, answers } = await request.json();
-
-  if (!examId || !Array.isArray(answers)) {
-    return NextResponse.json(
-      { error: "Fehlende Parameter" },
-      { status: 400 }
-    );
+  const body = await request.json();
+  const parsed = parseBody(examSubmitSchema, body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
+  const { examId, answers } = parsed.data;
 
   // Fetch the exam attempt
   const { data: examRaw } = await supabase

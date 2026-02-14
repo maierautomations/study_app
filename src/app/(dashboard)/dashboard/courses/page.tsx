@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { GraduationCap, Plus } from "lucide-react";
 import { CourseFormDialog } from "@/components/course/course-form-dialog";
-import { CourseCard } from "@/components/course/course-card";
+import { CourseFilters } from "@/components/course/course-filters";
 
 export default async function CoursesPage() {
   const supabase = await createClient();
@@ -57,17 +57,7 @@ export default async function CoursesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {courses.map((course) => (
-            <CourseCard
-              key={course.id}
-              course={course}
-              documentCount={(course.documents as unknown as { count: number }[])?.[0]?.count ?? 0}
-              quizCount={(course.quizzes as unknown as { count: number }[])?.[0]?.count ?? 0}
-              flashcardSetCount={(course.flashcard_sets as unknown as { count: number }[])?.[0]?.count ?? 0}
-            />
-          ))}
-        </div>
+        <CourseFilters courses={courses} />
       )}
     </div>
   );

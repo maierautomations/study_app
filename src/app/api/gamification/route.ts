@@ -5,18 +5,12 @@ import {
   calculateLevel,
   updateStreak,
   checkNewAchievements,
-  type ActivityType,
   type UserStats,
 } from "@/lib/gamification";
+import { parseBody, gamificationSchema } from "@/lib/validations";
 import type { Profile, Achievement } from "@/types/database";
 
 export async function POST(req: Request) {
-  const { action, courseId, metadata } = (await req.json()) as {
-    action: ActivityType;
-    courseId?: string;
-    metadata?: Record<string, unknown>;
-  };
-
   const supabase = await createClient();
   const {
     data: { user },
@@ -25,6 +19,13 @@ export async function POST(req: Request) {
   if (!user) {
     return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   }
+
+  const body = await req.json();
+  const parsed = parseBody(gamificationSchema, body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
+  }
+  const { action, courseId, metadata } = parsed.data;
 
   // Get current profile
   const { data: profileRaw } = await supabase
@@ -83,32 +84,17 @@ export async function POST(req: Request) {
     xp_earned: xpEarned,
   } as never);
 
-  // Check for new achievements
-  const [
-    { count: courseCount },
-    { count: documentCount },
-    { count: quizCount },
-    { count: flashcardSessionCount },
-  ] = await Promise.all([
-    supabase.from("courses").select("*", { count: "exact", head: true }).eq("user_id", user.id),
-    supabase.from("documents").select("*", { count: "exact", head: true }).eq("user_id", user.id),
-    supabase.from("quiz_attempts").select("*", { count: "exact", head: true }).eq("user_id", user.id),
-    supabase.from("flashcard_reviews").select("*", { count: "exact", head: true }).eq("user_id", user.id),
-  ]);
-
-  // Count perfect quizzes
-  const { count: perfectQuizCount } = await supabase
-    .from("quiz_attempts")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .eq("score", 100);
+  // Check for new achievements (single RPC call — N+1 fix)
+  const { data: rpcStats } = await (supabase.rpc as Function)("get_user_stats", {
+    p_user_id: user.id,
+  });
 
   const stats: UserStats = {
-    courseCount: courseCount ?? 0,
-    documentCount: documentCount ?? 0,
-    quizCount: quizCount ?? 0,
-    flashcardSessionCount: flashcardSessionCount ?? 0,
-    perfectQuizCount: perfectQuizCount ?? 0,
+    courseCount: rpcStats?.course_count ?? 0,
+    documentCount: rpcStats?.document_count ?? 0,
+    quizCount: rpcStats?.quiz_count ?? 0,
+    flashcardSessionCount: rpcStats?.flashcard_session_count ?? 0,
+    perfectQuizCount: rpcStats?.perfect_quiz_count ?? 0,
     currentStreak: newStreak,
     level: newLevel,
   };

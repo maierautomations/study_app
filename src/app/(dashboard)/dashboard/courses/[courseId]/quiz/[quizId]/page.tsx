@@ -263,6 +263,38 @@ export default function QuizPlayPage() {
 
       <Progress value={progress} className="h-2" />
 
+      {/* Navigation pills */}
+      <div className="flex flex-wrap gap-1.5">
+        {questions.map((q, i) => {
+          const answered = answers.some((a) => a.questionId === q.id);
+          const isCurrent = i === currentIndex;
+          const wasCorrect = answers.find((a) => a.questionId === q.id)?.isCorrect;
+
+          return (
+            <button
+              key={q.id}
+              type="button"
+              onClick={() => {
+                if (answered || i <= currentIndex) {
+                  // Allow navigating to answered or current/past questions (view only)
+                }
+              }}
+              className={`h-8 w-8 rounded-full text-xs font-medium transition-colors ${
+                isCurrent
+                  ? "bg-primary text-primary-foreground"
+                  : answered
+                    ? wasCorrect
+                      ? "bg-green-500/20 text-green-700 dark:text-green-400 border border-green-500/30"
+                      : "bg-red-500/20 text-red-700 dark:text-red-400 border border-red-500/30"
+                    : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {i + 1}
+            </button>
+          );
+        })}
+      </div>
+
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2 mb-2">

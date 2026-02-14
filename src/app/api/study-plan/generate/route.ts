@@ -8,6 +8,8 @@ import {
   incrementUsage,
   getFreemiumErrorMessage,
 } from "@/lib/freemium";
+import { parseBody, studyPlanGenerateSchema } from "@/lib/validations";
+import { rateLimit, AI_RATE_LIMIT } from "@/lib/rate-limit";
 
 const StudyPlanSchema = z.object({
   plan: z.array(
@@ -57,6 +59,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Rate limit
+  const rl = rateLimit(`${user.id}:study-plan`, AI_RATE_LIMIT.maxRequests, AI_RATE_LIMIT.windowMs);
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: `Zu viele Anfragen. Bitte warte ${Math.ceil(rl.resetInMs / 1000)} Sekunden.` },
+      { status: 429 }
+    );
+  }
+
   // Freemium limit check
   const freemium = await checkFreemiumLimit(user.id);
   if (!freemium.allowed) {
@@ -66,14 +77,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { courseId, examDate, dailyMinutes } = await request.json();
-
-  if (!courseId || !examDate) {
-    return NextResponse.json(
-      { error: "Fehlende Parameter (courseId, examDate)" },
-      { status: 400 }
-    );
+  const body = await request.json();
+  const parsed = parseBody(studyPlanGenerateSchema, body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
+  const { courseId, examDate, dailyMinutes } = parsed.data;
 
   // Verify course ownership
   const { data: courseRaw } = await supabase
